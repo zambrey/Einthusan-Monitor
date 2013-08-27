@@ -74,7 +74,7 @@ function handleXMLRequestResponse(requestType, languageName, responseText)
 		var movieCovers = doc.getElementsByClassName("movie-cover-wrapper");
 		for(i=0; i<movieElems.length; i++)
 		{
-			movieObjArray.push(new MovieObject(movieElems[i].innerHTML.split(' - ')[0],movieCovers[i].firstChild.getAttribute('src')));
+			movieObjArray.push(new MovieObject(movieElems[i].innerHTML.split(' - ')[0],movieCovers[i].firstChild.getAttribute('src'),movieCovers[i].getAttribute('href')));
 		}
 		fetchedTitles[languageIndex] = movieObjArray;
 		updateNumberOfNewMovies(languageName, movieObjArray);
@@ -180,11 +180,12 @@ function sumUpArray(arr)
 	return sum;
 }
 
-function MovieObject(title, coverSrc)
+function MovieObject(title, coverSrc, watchURL)
 {
 	var mo =  new Object();
 	mo.movieTitle = title;
 	mo.movieCover = coverSrc;
+	mo.watchURL = watchURL;
 	mo.isNew = false;
 	return mo;
 }

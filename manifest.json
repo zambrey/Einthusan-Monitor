@@ -16,7 +16,8 @@
     "scripts": ["background.js"]
     },
 
-    "permissions": ["cookies",
+    "permissions": ["tabs",
+    "cookies",
     "https://www.einthusan.com/", 
     "http://www.einthusan.com/"]
   }

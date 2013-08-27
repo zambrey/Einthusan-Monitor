@@ -61,9 +61,20 @@ function displayMovieTitles(movieObjects)
 		//tr.appendChild(indexTd);
 		tr.appendChild(coverTd);
 		tr.appendChild(td);
+		tr.style.cursor = 'pointer';
+		var clickHandler = getClickHandler(homeUrl+movieObjects[i].watchURL);
+		tr.addEventListener('click',clickHandler);
 		tbody.appendChild(tr);
 	}   
 	titleTable.appendChild(tbody);
+}
+
+function getClickHandler(watchURL)
+{
+	return function()
+	{
+		chrome.tabs.create({"url":watchURL},function(){});
+	}
 }
 
 function displayLanguageButtons(languages)
