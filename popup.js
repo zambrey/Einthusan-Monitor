@@ -1,22 +1,22 @@
-var languages = new Array();
-var fetchedTitles = new Array();
-var done = 4, ok = 200;
 var homeUrl = "http://www.einthusan.com/";
-var queryPath = "index.php?lang=";
-var favoriteLang = 'hindi';
+var languages;
+var favoriteLang;
+var cookieValidDuration = 1000*60*60*24*30*12;
 
-var LANGUAGE_REQUEST_CONST = "languageRequest";
-var MOVIES_REQUEST_CONST = "moviesRequest";
-
-// function startIt()
+// function startDisplay()
 {
-	sendXMLRequest(homeUrl, LANGUAGE_REQUEST_CONST, null);
+	requestData('languages');
 }
 
 function getMovieTitles(button)
 {
 	var languageName = button.innerText;
-	button.setAttribute('class','btn btn-success');
+	getMoviesForLanguage(languageName);
+}
+
+function getMoviesForLanguage(languageName)
+{
+	document.getElementById(languageName.toLowerCase()+"Button").setAttribute('class','btn btn-success');
 	for(i=0; i<languages.length; i++)
 	{
 		var langButton = document.getElementById(languages[i].toLowerCase()+"Button");
@@ -29,53 +29,47 @@ function getMovieTitles(button)
 			langButton.setAttribute('class','btn');
 		}
 	}
-	/*if(fetchedTitles[languages.indexOf(languageName)])
-	{
-		displayMovieTitles(fetchedTitles[languages.indexOf(languageName)]);
-		return;
-	}*/
-	getMovieTitlesForLanguage(languageName);
+	requestData(languageName);
 }
 
-function getMovieTitlesForLanguage(languageName)
-{
-	sendXMLRequest(homeUrl+queryPath+languageName.toLowerCase(), MOVIES_REQUEST_CONST, languageName);
-}
-
-function capitaliseFirstLetter(string)
-{
-	return string.charAt(0).toUpperCase() + string.slice(1);
-}
-
-function displayMovieTitles(movieTitles, movieCovers)
+function displayMovieTitles(movieObjects)
 {
 	var titleTable = document.getElementById('movieTitles');
 	titleTable.innerHTML = '';  //Removing all other names
-	for(i=0; i<movieTitles.length; i++)
+	var tbody = document.createElement('tbody');
+	for(i=0; i<movieObjects.length; i++)
 	{
+		var movieTitle = movieObjects[i].movieTitle;
+		var movieCover = movieObjects[i].movieCover;
 		var tr = document.createElement('tr');
+		if(movieObjects[i].isNew)
+		{
+			tr.setAttribute('class','info');
+		}
 		var td = document.createElement('td');
 		var indexTd = document.createElement('td');
 		var coverTd = document.createElement('td');
 		var cover = document.createElement('img');
-		cover.setAttribute('src',homeUrl+movieCovers[i]);
+		cover.setAttribute('src',homeUrl+movieCover);
 		cover.setAttribute('style','height:56px');
 		cover.setAttribute('class','img-rounded');
 		coverTd.appendChild(cover);
 		indexTd.innerText = i+1+".";
 		var nameDiv = document.createElement('div');
-		nameDiv.innerHTML = movieTitles[i];
+		nameDiv.innerHTML = movieTitle;
 		td.appendChild(nameDiv);
 		//tr.appendChild(indexTd);
 		tr.appendChild(coverTd);
 		tr.appendChild(td);
-		titleTable.appendChild(tr);
-	}      
+		tbody.appendChild(tr);
+	}   
+	titleTable.appendChild(tbody);
 }
 
-function displayLanguageButtons()
+function displayLanguageButtons(languages)
 {
 	var languagesTable = document.getElementById('languageButtons');
+	
 	if(languages.length>0 && languagesTable)
 	{
 		var tr =document.createElement('tr');
@@ -95,64 +89,49 @@ function displayLanguageButtons()
 	}
 }
 
-function sendXMLRequest(url, requestType, languageName, responseHandler)
+function setCookie(languageName, movieObjects)
 {
-	var request = new XMLHttpRequest();
-	request.open("GET", url, true);
-	request.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
-	request.onreadystatechange = getResponseHandler(request, requestType, languageName, handleXMLRequestResponse);
-	request.send();
+	var details = new Object();
+	details.url = homeUrl;
+	details.name = languageName.toLowerCase()+'Movies';
+	details.value = buildCookieString(movieObjects);
+	details.expirationDate = (new Date().getTime()/1000) + cookieValidDuration;
+	chrome.cookies.remove({"url":homeUrl,"name":details.name});
+	chrome.cookies.set(details);
 }
 
-function handleXMLRequestResponse(requestType, languageName, responseText)
+function buildCookieString(movieObjects)
 {
-	if(requestType == LANGUAGE_REQUEST_CONST)
+	var cookieString = '';
+	for(i=0; i<movieObjects.length; i++)
 	{
-		var doc = document.implementation.createHTMLDocument("languages");
-		doc.documentElement.innerHTML = responseText;
-		var langs = doc.getElementsByTagName('li');
-		for(i=0; i<langs.length; i++)
+		cookieString = cookieString.concat(movieObjects[i].movieTitle);
+		if(i<movieObjects.length-1)
 		{
-			langName = langs[i].firstChild.innerHTML;
-			languages.push(langName);
-		}
-		fetchedTitles.length = languages.length;
-		displayLanguageButtons();
-		getMovieTitlesForLanguage(favoriteLang);
-		document.getElementById(favoriteLang+"Button").setAttribute('class','btn btn-success');
-	}
-	else if(requestType == MOVIES_REQUEST_CONST)
-	{	
-		var movieTitles = new Array();
-		var movieCoverSrc = new Array();
-		var doc = document.implementation.createHTMLDocument("movies");
-		doc.documentElement.innerHTML = responseText;
-		var movieElems = doc.getElementsByClassName("movie-title");
-		var movieCovers = doc.getElementsByClassName("movie-cover-wrapper");
-		for(i=0; i<movieElems.length; i++)
-		{
-			movieTitles.push(movieElems[i].innerHTML.split(' - ')[0]);
-			movieCoverSrc.push(movieCovers[i].firstChild.getAttribute('src'));
-		}
-		displayMovieTitles(movieTitles,movieCoverSrc);
-		fetchedTitles[languages.indexOf(capitaliseFirstLetter(languageName))] = movieTitles;
-	}
-}
-
-function getResponseHandler(req, requestType, languageName, responseHandler)
-{
-	return function()
-	{
-		if(req.readyState == done && req.status == ok)
-		{
-			if(responseHandler)
-			{
-				responseHandler(requestType, languageName, req.responseText);
-			}
+			cookieString = cookieString.concat('--');
 		}
 	}
+	return cookieString;
 }
 
 // document.addEventListener('DOMContentLoaded', function () {
-//   document.getElementById('click').addEventListener('click', startIt);
+//   document.getElementById('click').addEventListener('click', startDisplay);
 // });
+
+function requestData(dataType)
+{
+	chrome.extension.sendRequest({requestType: dataType}, function(response){
+		if(dataType == 'languages')
+		{
+			languages = response.list;
+			favoriteLang = languages[0];
+			displayLanguageButtons(response.list);
+			getMoviesForLanguage(favoriteLang);
+		}
+		else
+		{
+			displayMovieTitles(response.list);
+			setCookie(dataType.toLowerCase(), response.list);
+		}
+	});
+}
