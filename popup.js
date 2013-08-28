@@ -54,7 +54,7 @@ function getMoviesForLanguage(languageName)
 	setCookie(languageName.toLowerCase(), movieList);
 	if(backgroundPage.newMoviesCnt[index]>0)
 	{	
-		//sendMessage(backgroundPage.RESET_NEW_FLAGS, languageName);
+		sendMessage(backgroundPage.RESET_NEW_FLAGS, languageName);
 	}
 }
 
@@ -68,6 +68,7 @@ function displayMovieTitles(movieObjects)
 		var movieTitle = movieObjects[i].movieTitle;
 		var movieCover = movieObjects[i].movieCover;
 		var tr = document.createElement('tr');
+		//tr.setAttribute('style','-webkit-transition:background-color 2000ms linear');
 		if(movieObjects[i].isNew)
 		{
 			tr.setAttribute('class','info');
@@ -177,6 +178,18 @@ function sendMessage(msgType, languageName)
 	chrome.extension.sendRequest(msgObject, function(response){
 		if(response.messageType == backgroundPage.FLAGS_RESET)
 		{
+			updateButtonBadge(languageName);
 		}
 	});
+}
+
+function updateButtonBadge(languageName)
+{
+	/*var button = document.getElementById(languageName.toLowerCase()+"Button");
+	button.parentNode.removeChild(button.parentNode.lastChild);
+	var titleTable = document.getElementById('movieTitles').firstChild;
+	for(i=0; i < titleTable.children.length; i++)
+	{
+		titleTable.children[i].removeAttribute('class');
+	}*/
 }

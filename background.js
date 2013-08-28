@@ -198,18 +198,13 @@ function MovieObject(title, coverSrc, watchURL)
 
 function resetNewFlags(language)
 {
-	/*var index = languages.indexOf(language);
+	var index = languages.indexOf(language);
 	newMoviesCnt[index] = 0;
 	var movieList = fetchedTitles[index];
 	for(i=0; i<movieList.length; i++)
 	{
 		movieList[i].isNew = false;
-	}*/
-}
-
-function alertMe()
-{
-	alert('will reset now');
+	}
 }
 
 chrome.extension.onRequest.addListener(
