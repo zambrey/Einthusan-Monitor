@@ -17,7 +17,7 @@ function render()
 		backgroundPage = chrome.extension.getBackgroundPage();
 		languages = backgroundPage.languages;
 		displayLanguageButtons(languages);
-		//getMoviesForLanguage(languages[0]);
+		getMoviesForLanguage(languages[0]);
 	}
 	else
 	{
@@ -185,9 +185,9 @@ function sendMessage(msgType, languageName)
 
 function updateButtonBadge(languageName)
 {
-	/*var button = document.getElementById(languageName.toLowerCase()+"Button");
+	var button = document.getElementById(languageName.toLowerCase()+"Button");
 	button.parentNode.removeChild(button.parentNode.lastChild);
-	var titleTable = document.getElementById('movieTitles').firstChild;
+	/*var titleTable = document.getElementById('movieTitles').firstChild;
 	for(i=0; i < titleTable.children.length; i++)
 	{
 		titleTable.children[i].removeAttribute('class');

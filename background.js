@@ -19,6 +19,21 @@ var INTERVAL_CONST = 1*60*60*1000; //One hour
 	initiate();
 }
 
+function setBadge()
+{
+	var badgeNumber = sumUpArray(newMoviesCnt);
+	if(badgeNumber > 0)
+	{
+		chrome.browserAction.setBadgeText({"text":badgeNumber.toString()});//248,148,6
+		chrome.browserAction.setBadgeBackgroundColor({"color":[128,0,0,200]});	
+	}
+	else
+	{
+		chrome.browserAction.setBadgeText({"text":"".toString()});//248,148,6
+		chrome.browserAction.setBadgeBackgroundColor({"color":[128,0,0,0]});		
+	}
+}
+
 function initiate()
 {
 	sendXMLRequest(homeUrl, LANGUAGE_REQUEST_CONST, null);
@@ -169,6 +184,7 @@ function fireNotification()
 		//alert("New movie count is: "+sumUpArray(newMoviesCnt));
 		//chrome.runtime.sendMessage({requestType: "status", status: "ready"}, function(response){console.log(response);});
 		isDataReady = true;
+		setBadge();
 	}
 	else
 	{
@@ -205,6 +221,7 @@ function resetNewFlags(language)
 	{
 		movieList[i].isNew = false;
 	}
+	setBadge();
 }
 
 chrome.extension.onRequest.addListener(
