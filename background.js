@@ -5,9 +5,13 @@ var homeUrl = "http://www.einthusan.com/";
 var queryPath = "index.php?lang=";
 var newMoviesCnt;
 var langsChecked;
+var isDataReady = false;
 
 var LANGUAGE_REQUEST_CONST = "languageRequest";
 var MOVIES_REQUEST_CONST = "moviesRequest";
+
+var RESET_NEW_FLAGS = "resetNewFlags";
+var FLAGS_RESET = "flagsReset";
 
 var INTERVAL_CONST = 1*60*60*1000; //One hour
 
@@ -162,7 +166,9 @@ function fireNotification()
 {
 	if(sumUpArray(langsChecked) == languages.length)
 	{
-		alert("New movie count is: "+sumUpArray(newMoviesCnt));
+		//alert("New movie count is: "+sumUpArray(newMoviesCnt));
+		//chrome.runtime.sendMessage({requestType: "status", status: "ready"}, function(response){console.log(response);});
+		isDataReady = true;
 	}
 	else
 	{
@@ -190,15 +196,31 @@ function MovieObject(title, coverSrc, watchURL)
 	return mo;
 }
 
+function resetNewFlags(language)
+{
+	/*var index = languages.indexOf(language);
+	newMoviesCnt[index] = 0;
+	var movieList = fetchedTitles[index];
+	for(i=0; i<movieList.length; i++)
+	{
+		movieList[i].isNew = false;
+	}*/
+}
+
+function alertMe()
+{
+	alert('will reset now');
+}
+
 chrome.extension.onRequest.addListener(
 	function(request, sender, sendResponse) {
-		if (request.requestType == "languages")
+		if (request.messageType == RESET_NEW_FLAGS)
 		{
-			sendResponse({list: languages});
-		}
-		else
-		{
-			var index = languages.indexOf(capitaliseFirstLetter(request.requestType));
-			sendResponse({list: fetchedTitles[index]});
+			if(request.language)
+			{
+				resetNewFlags(request.language);
+				sendResponse({messageType: FLAGS_RESET, language:request.language});
+			}
+			
 		}	
 	});

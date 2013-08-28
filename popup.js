@@ -1,11 +1,30 @@
 var homeUrl = "http://www.einthusan.com/";
 var languages;
-var favoriteLang;
-var cookieValidDuration = 1000*60*60*24*30*12;
+var cookieValidDuration = 60*60*24*30*12;
+var backgroundPage = null;
 
-// function startDisplay()
 {
-	requestData('languages');
+	setTimeout(render, 50);
+	window.onclose = function(){alert('window closed')};
+}
+
+function render()
+{
+	if(chrome.extension.getBackgroundPage().isDataReady)
+	{
+		var pi = document.getElementById('progressIndicatorDiv');
+		pi.style.display = 'none';
+		backgroundPage = chrome.extension.getBackgroundPage();
+		languages = backgroundPage.languages;
+		displayLanguageButtons(languages);
+		//getMoviesForLanguage(languages[0]);
+	}
+	else
+	{
+		var pi = document.getElementById('progressIndicatorDiv');
+		pi.style.display = 'block';
+		setTimeout(render, 200);
+	}
 }
 
 function getMovieTitles(button)
@@ -29,7 +48,14 @@ function getMoviesForLanguage(languageName)
 			langButton.setAttribute('class','btn');
 		}
 	}
-	requestData(languageName);
+	var index = languages.indexOf(languageName);
+	var movieList = backgroundPage.fetchedTitles[index];
+	displayMovieTitles(movieList);
+	setCookie(languageName.toLowerCase(), movieList);
+	if(backgroundPage.newMoviesCnt[index]>0)
+	{	
+		//sendMessage(backgroundPage.RESET_NEW_FLAGS, languageName);
+	}
 }
 
 function displayMovieTitles(movieObjects)
@@ -80,7 +106,6 @@ function getClickHandler(watchURL)
 function displayLanguageButtons(languages)
 {
 	var languagesTable = document.getElementById('languageButtons');
-	
 	if(languages.length>0 && languagesTable)
 	{
 		var tr =document.createElement('tr');
@@ -93,7 +118,19 @@ function displayLanguageButtons(languages)
 			var lang = languages[i];
 			button.addEventListener('click',function(){getMovieTitles(this);});
 			var td = document.createElement('td');
-			td.appendChild(button);
+			td.setAttribute('style','border-top:none;');
+			var div = document.createElement('div');
+			div.setAttribute('style','position:relative;');
+			div.appendChild(button);
+			if(backgroundPage.newMoviesCnt[i]>0)
+			{
+				var badge = document.createElement('span');
+				badge.setAttribute('class','badge badge-warning');
+				badge.setAttribute('style','position:absolute; right:-8px;top:-8px;');
+				badge.innerText = backgroundPage.newMoviesCnt[i];	
+				div.appendChild(badge);
+			}
+			td.appendChild(div);
 			tr.appendChild(td);
 		}
 		languagesTable.appendChild(tr);
@@ -126,23 +163,20 @@ function buildCookieString(movieObjects)
 }
 
 // document.addEventListener('DOMContentLoaded', function () {
-//   document.getElementById('click').addEventListener('click', startDisplay);
+//   document.getElementById('click').addEventListener('click', render);
 // });
 
-function requestData(dataType)
+function sendMessage(msgType, languageName)
 {
-	chrome.extension.sendRequest({requestType: dataType}, function(response){
-		if(dataType == 'languages')
+	var msgObject = new Object();
+	msgObject.messageType = msgType;
+	if(msgType == backgroundPage.RESET_NEW_FLAGS)
+	{
+		msgObject.language = languageName;
+	}
+	chrome.extension.sendRequest(msgObject, function(response){
+		if(response.messageType == backgroundPage.FLAGS_RESET)
 		{
-			languages = response.list;
-			favoriteLang = languages[0];
-			displayLanguageButtons(response.list);
-			getMoviesForLanguage(favoriteLang);
-		}
-		else
-		{
-			displayMovieTitles(response.list);
-			setCookie(dataType.toLowerCase(), response.list);
 		}
 	});
 }
