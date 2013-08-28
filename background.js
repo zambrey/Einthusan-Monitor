@@ -181,8 +181,6 @@ function fireNotification()
 {
 	if(sumUpArray(langsChecked) == languages.length)
 	{
-		//alert("New movie count is: "+sumUpArray(newMoviesCnt));
-		//chrome.runtime.sendMessage({requestType: "status", status: "ready"}, function(response){console.log(response);});
 		isDataReady = true;
 		setBadge();
 	}

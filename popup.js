@@ -68,7 +68,6 @@ function displayMovieTitles(movieObjects)
 		var movieTitle = movieObjects[i].movieTitle;
 		var movieCover = movieObjects[i].movieCover;
 		var tr = document.createElement('tr');
-		//tr.setAttribute('style','-webkit-transition:background-color 2000ms linear');
 		if(movieObjects[i].isNew)
 		{
 			tr.setAttribute('class','info');
@@ -162,10 +161,6 @@ function buildCookieString(movieObjects)
 	}
 	return cookieString;
 }
-
-// document.addEventListener('DOMContentLoaded', function () {
-//   document.getElementById('click').addEventListener('click', render);
-// });
 
 function sendMessage(msgType, languageName)
 {
