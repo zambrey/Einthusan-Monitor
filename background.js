@@ -13,31 +13,17 @@ var MOVIES_REQUEST_CONST = "moviesRequest";
 var RESET_NEW_FLAGS = "resetNewFlags";
 var FLAGS_RESET = "flagsReset";
 
-var INTERVAL_CONST = 1*60*60*1000; //One hour
+var REFRESH_INTERVAL = 3*60*60*1000; //Three hour
+var TESTING_REFRESH_INTERVAL = 0.25*60*60*1000; //Ouarter hour
 
 {
 	initiate();
 }
 
-function setBadge()
-{
-	var badgeNumber = sumUpArray(newMoviesCnt);
-	if(badgeNumber > 0)
-	{
-		chrome.browserAction.setBadgeText({"text":badgeNumber.toString()});//248,148,6
-		chrome.browserAction.setBadgeBackgroundColor({"color":[128,0,0,200]});	
-	}
-	else
-	{
-		chrome.browserAction.setBadgeText({"text":"".toString()});//248,148,6
-		chrome.browserAction.setBadgeBackgroundColor({"color":[128,0,0,0]});		
-	}
-}
-
 function initiate()
 {
 	sendXMLRequest(homeUrl, LANGUAGE_REQUEST_CONST, null);
-	setTimeout(initiate, INTERVAL_CONST);
+	setTimeout(initiate, REFRESH_INTERVAL);
 }
 
 function getMovieTitlesForLanguage(languageName)
@@ -66,6 +52,7 @@ function handleXMLRequestResponse(requestType, languageName, responseText)
 		var doc = document.implementation.createHTMLDocument("languages");
 		doc.documentElement.innerHTML = responseText;
 		var langs = doc.getElementsByTagName('li');
+		languages = [];
 		for(i=0; i<langs.length; i++)
 		{
 			langName = langs[i].firstChild.innerHTML;
@@ -220,6 +207,21 @@ function resetNewFlags(language)
 		movieList[i].isNew = false;
 	}
 	setBadge();
+}
+
+function setBadge()
+{
+	var badgeNumber = sumUpArray(newMoviesCnt);
+	if(badgeNumber > 0)
+	{
+		chrome.browserAction.setBadgeText({"text":badgeNumber.toString()});//248,148,6
+		chrome.browserAction.setBadgeBackgroundColor({"color":[248,148,6,200]});	
+	}
+	else
+	{
+		chrome.browserAction.setBadgeText({"text":"".toString()});//248,148,6
+		chrome.browserAction.setBadgeBackgroundColor({"color":[128,0,0,0]});		
+	}
 }
 
 chrome.extension.onRequest.addListener(

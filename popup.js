@@ -70,7 +70,7 @@ function displayMovieTitles(movieObjects)
 		var tr = document.createElement('tr');
 		if(movieObjects[i].isNew)
 		{
-			tr.setAttribute('class','info');
+			tr.setAttribute('class','warning');
 		}
 		var td = document.createElement('td');
 		var indexTd = document.createElement('td');
