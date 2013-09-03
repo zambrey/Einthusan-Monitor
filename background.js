@@ -14,7 +14,7 @@ var RESET_NEW_FLAGS = "resetNewFlags";
 var FLAGS_RESET = "flagsReset";
 
 var REFRESH_INTERVAL = 3*60*60*1000; //Three hour
-var TESTING_REFRESH_INTERVAL = 0.25*60*60*1000; //Ouarter hour
+var TEST_REFRESH_INTERVAL = 0.25*60*60*1000; //Ouarter hour
 
 {
 	initiate();
