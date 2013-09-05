@@ -1,20 +1,22 @@
-var languages = new Array();
-var fetchedTitles = new Array();
-var done = 4, ok = 200;
-var homeUrl = "http://www.einthusan.com/";
-var queryPath = "index.php?lang=";
-var newMoviesCnt;
-var langsChecked;
-var isDataReady = false;
-
-var LANGUAGE_REQUEST_CONST = "languageRequest";
-var MOVIES_REQUEST_CONST = "moviesRequest";
-
-var RESET_NEW_FLAGS = "resetNewFlags";
-var FLAGS_RESET = "flagsReset";
-
-var REFRESH_INTERVAL = 3*60*60*1000; //Three hour
-var TEST_REFRESH_INTERVAL = 0.25*60*60*1000; //Ouarter hour
+/*
+ * Author
+ * Ameya Zambre
+ * ameyazambre@gmail.com
+ */
+var languages = new Array(),
+	fetchedTitles = new Array(),
+	done = 4, 
+	ok = 200,
+	homeUrl = "http://www.einthusan.com/",
+	queryPath = "index.php?lang=",
+	newMoviesCnt,
+	langsChecked,
+	isDataReady = false,
+	LANGUAGE_REQUEST_CONST = "languageRequest",
+	MOVIES_REQUEST_CONST = "moviesRequest",
+	RESET_NEW_FLAGS = "resetNewFlags";
+	FLAGS_RESET = "flagsReset",
+	REFRESH_INTERVAL = 3*60*60*1000; //Three hour
 
 {
 	initiate();
@@ -49,9 +51,9 @@ function handleXMLRequestResponse(requestType, languageName, responseText)
 {
 	if(requestType == LANGUAGE_REQUEST_CONST)
 	{
-		var doc = document.implementation.createHTMLDocument("languages");
+		var doc = document.implementation.createHTMLDocument("languages"),langs;
 		doc.documentElement.innerHTML = responseText;
-		var langs = doc.getElementsByTagName('li');
+		langs = doc.getElementsByTagName('li');
 		languages = [];
 		for(i=0; i<langs.length; i++)
 		{
@@ -72,12 +74,15 @@ function handleXMLRequestResponse(requestType, languageName, responseText)
 	}
 	else if(requestType == MOVIES_REQUEST_CONST)
 	{	
-		var movieObjArray = new Array();
-		var languageIndex = languages.indexOf(capitaliseFirstLetter(languageName));
-		var doc = document.implementation.createHTMLDocument("movies");
+		var	languageIndex = languages.indexOf(capitaliseFirstLetter(languageName)),
+			movieObjArray, 
+			movieElems, 
+			movieCovers;
+		doc= document.implementation.createHTMLDocument("movies");
 		doc.documentElement.innerHTML = responseText;
-		var movieElems = doc.getElementsByClassName("movie-title");
-		var movieCovers = doc.getElementsByClassName("movie-cover-wrapper");
+		movieObjArray = new Array();
+		movieElems = doc.getElementsByClassName("movie-title");
+		movieCovers = doc.getElementsByClassName("movie-cover-wrapper");
 		for(i=0; i<movieElems.length; i++)
 		{
 			movieObjArray.push(new MovieObject(movieElems[i].innerHTML.split(' - ')[0],movieCovers[i].firstChild.getAttribute('src'),movieCovers[i].getAttribute('href')));
@@ -103,11 +108,11 @@ function getResponseHandler(req, requestType, languageName, responseHandler)
 
 function breakCookieString(cookieString)
 {
-	var oldMovieTitles;
+	var oldMovieTitles,oldMovies;
 	if(cookieString)
 	{
 		oldMovieTitles = new Array()
-		var oldMovies = cookieString.split('--');
+		oldMovies = cookieString.split('--');
 		for(i=0; i<oldMovies.length; i++)
 		{
 			oldMovieTitles.push(oldMovies[i]);
@@ -118,10 +123,9 @@ function breakCookieString(cookieString)
 
 function getCookie(languageName)
 {
-	var details = new Object();
+	var details = new Object(), oldMovieTitles;
 	details.url = homeUrl;
 	details.name = languageName.toLowerCase()+'Movies';
-	var oldMovieTitles;
 	chrome.cookies.get(details, function(cookie){
 		oldMovieTitles = breakCookieString(cookie.value);
 	});
@@ -130,10 +134,10 @@ function getCookie(languageName)
 
 function updateNumberOfNewMovies(languageName, movieObjArray)
 {
-	var moviesCookie = null;// = getCookie(languageName);
-	var details = new Object();
+	var moviesCookie = null,
+		details = new Object(),
+		languageIndex = languages.indexOf(languageName);
 	details.url = homeUrl;
-	var languageIndex = languages.indexOf(languageName);
 	details.name = languageName.toLowerCase()+'Movies';
 	chrome.cookies.get(details, function(cookie){
 		if(cookie)
@@ -199,9 +203,9 @@ function MovieObject(title, coverSrc, watchURL)
 
 function resetNewFlags(language)
 {
-	var index = languages.indexOf(language);
+	var index = languages.indexOf(language),
+		movieList = fetchedTitles[index];
 	newMoviesCnt[index] = 0;
-	var movieList = fetchedTitles[index];
 	for(i=0; i<movieList.length; i++)
 	{
 		movieList[i].isNew = false;

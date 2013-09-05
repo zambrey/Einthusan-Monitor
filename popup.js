@@ -1,7 +1,12 @@
-var homeUrl = "http://www.einthusan.com/";
-var languages;
-var cookieValidDuration = 60*60*24*30*12;
-var backgroundPage = null;
+/*
+ * Author
+ * Ameya Zambre
+ * ameyazambre@gmail.com
+ */
+var homeUrl = "http://www.einthusan.com/",
+	languages,
+	cookieValidDuration = 60*60*24*30*12,
+	backgroundPage = null;
 
 {
 	setTimeout(render, 50);
@@ -21,7 +26,7 @@ function render()
 	}
 	else
 	{
-		var pi = document.getElementById('progressIndicatorDiv');
+		pi = document.getElementById('progressIndicatorDiv');
 		pi.style.display = 'block';
 		setTimeout(render, 200);
 	}
@@ -48,8 +53,8 @@ function getMoviesForLanguage(languageName)
 			langButton.setAttribute('class','btn');
 		}
 	}
-	var index = languages.indexOf(languageName);
-	var movieList = backgroundPage.fetchedTitles[index];
+	var index = languages.indexOf(languageName),
+		movieList = backgroundPage.fetchedTitles[index];
 	displayMovieTitles(movieList);
 	setCookie(languageName.toLowerCase(), movieList);
 	if(backgroundPage.newMoviesCnt[index]>0)
@@ -60,35 +65,44 @@ function getMoviesForLanguage(languageName)
 
 function displayMovieTitles(movieObjects)
 {
-	var titleTable = document.getElementById('movieTitles');
+	var titleTable = document.getElementById('movieTitles'),
+		tbody = document.createElement('tbody'),
+		movieTitle,
+		movieCover,
+		tr,
+		td,
+		indexTd,
+		coverTd,
+		cover,
+		nameDiv,
+		clickHandler;
 	titleTable.innerHTML = '';  //Removing all other names
-	var tbody = document.createElement('tbody');
 	for(i=0; i<movieObjects.length; i++)
 	{
-		var movieTitle = movieObjects[i].movieTitle;
-		var movieCover = movieObjects[i].movieCover;
-		var tr = document.createElement('tr');
+		movieTitle = movieObjects[i].movieTitle;
+		movieCover = movieObjects[i].movieCover;
+		tr = document.createElement('tr');
 		if(movieObjects[i].isNew)
 		{
 			tr.setAttribute('class','warning');
 		}
-		var td = document.createElement('td');
-		var indexTd = document.createElement('td');
-		var coverTd = document.createElement('td');
-		var cover = document.createElement('img');
+		td = document.createElement('td');
+		indexTd = document.createElement('td');
+		coverTd = document.createElement('td');
+		cover = document.createElement('img');
 		cover.setAttribute('src',homeUrl+movieCover);
 		cover.setAttribute('style','height:56px');
 		cover.setAttribute('class','img-rounded');
 		coverTd.appendChild(cover);
 		indexTd.innerText = i+1+".";
-		var nameDiv = document.createElement('div');
+		nameDiv = document.createElement('div');
 		nameDiv.innerHTML = movieTitle;
 		td.appendChild(nameDiv);
 		//tr.appendChild(indexTd);
 		tr.appendChild(coverTd);
 		tr.appendChild(td);
 		tr.style.cursor = 'pointer';
-		var clickHandler = getClickHandler(homeUrl+movieObjects[i].watchURL);
+		clickHandler = getClickHandler(homeUrl+movieObjects[i].watchURL);
 		tr.addEventListener('click',clickHandler);
 		tbody.appendChild(tr);
 	}   
@@ -105,26 +119,32 @@ function getClickHandler(watchURL)
 
 function displayLanguageButtons(languages)
 {
-	var languagesTable = document.getElementById('languageButtons');
-	if(languages.length>0 && languagesTable)
+	var languagesTable = document.getElementById('languageButtons'),
+		tr,
+		button,
+		lang,
+		td,
+		div,
+		badge
+;	if(languages.length>0 && languagesTable)
 	{
-		var tr =document.createElement('tr');
+		tr =document.createElement('tr');
 		for(i=0; i<languages.length; i++)
 		{
-			var button = document.createElement('button');
+			button = document.createElement('button');
 			button.setAttribute('class','btn');
 			button.setAttribute('id',languages[i].toLowerCase()+"Button");
 			button.innerHTML = languages[i];
-			var lang = languages[i];
+			lang = languages[i];
 			button.addEventListener('click',function(){getMovieTitles(this);});
-			var td = document.createElement('td');
+			td = document.createElement('td');
 			td.setAttribute('style','border-top:none;');
-			var div = document.createElement('div');
+			div = document.createElement('div');
 			div.setAttribute('style','position:relative;');
 			div.appendChild(button);
 			if(backgroundPage.newMoviesCnt[i]>0)
 			{
-				var badge = document.createElement('span');
+				badge = document.createElement('span');
 				badge.setAttribute('class','badge badge-warning');
 				badge.setAttribute('style','position:absolute; right:-8px;top:-8px;');
 				badge.innerText = backgroundPage.newMoviesCnt[i];	
