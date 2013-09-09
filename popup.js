@@ -91,7 +91,7 @@ function displayMovieTitles(movieObjects)
 		coverTd = document.createElement('td');
 		cover = document.createElement('img');
 		cover.setAttribute('src',homeUrl+movieCover);
-		cover.setAttribute('style','height:56px');
+		cover.setAttribute('style','height:30px');
 		cover.setAttribute('class','img-rounded');
 		coverTd.appendChild(cover);
 		indexTd.innerText = i+1+".";

@@ -27,6 +27,8 @@
     "scripts": ["background.min.js"]
     },
 
+    "options_page":"options.html",
+
     "permissions": ["tabs",
     "cookies",
     "https://www.einthusan.com/", 

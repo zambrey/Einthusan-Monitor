@@ -1,0 +1,67 @@
+<!-- /*
+ * Author
+ * Ameya Zambre
+ * ameyazambre@gmail.com
+ */ -->
+ <!doctype html>
+ <html>
+ <head>
+  <link rel="stylesheet" type="text/css" href="css/bootstrap.css">
+  <title>Einthusan Monitor Preferences</title>
+  
+</head>
+<body>
+  <div style="margin-left: auto; margin-right: auto; width: 900px; border: 1px solid #666666; margin-top: 20px; height: auto; box-shadow: 0px 10px 20px #666666; border-radius: 4px; background-color:rgba(200,200,200,0.1); padding-bottom:20px;">
+    <div style='margin:20px;text-align: center;'>
+      <img style='width:60px;height:60px;' src='icon128.png'></img>
+    </div>
+
+    <table style='margin-right:auto; margin-left:auto;'>
+      <tr>
+        <td style='padding:5px;'>
+          <label class="control-label">Default Language:</label>
+        </td>
+        <td style='padding:5px;'>
+          <div class="input-append controls" style = 'margin-left:20px;'>
+            <div class="btn-group">
+              <button id='selectedLanguage' class="btn dropdown-toggle" data-toggle="dropdown">Tamil <span class="caret"></span></button>
+              <ul id='languageList' class="dropdown-menu">
+                <li><a href="#">Tamil </a></li>
+                <li><a href="#">Hindi </a></li>
+                <li><a href="#">Malayalam </a></li>
+                <li><a href="#">Telugu </a></li>
+              </ul>
+            </div>
+          </div>
+          <span class="help-inline">The default language tab when the popup is opened</span>
+        </td>
+      </tr>
+      <tr>
+        <td style='padding:5px;'>
+          <label class="control-label">Refresh Interval:</label>
+        </td>
+        <td style='padding:5px;'>
+          <div class="input-append controls" style = 'margin-left:20px;'>
+            <input class="span2" id="appendedDropdownButton" type="text">
+            <div class="btn-group">
+              <button id='selectedTimeUnit' class="btn dropdown-toggle" data-toggle="dropdown">Hours <span class="caret"></span></button>
+              <ul class="dropdown-menu">
+                <li><a href="#">Hours </a></li>
+                <li><a href="#">Minutes </a></li>
+                <li><a href="#">Seconds </a></li>
+              </ul>
+            </div>
+          </div>
+          <span class="help-inline">The refresh interval for the movies data</span>
+        </td>
+      </tr>
+    </table>
+
+  </div>
+</body>
+<footer>
+  <script src="js/jquery-2.0.3.min.js"></script>
+  <script src="js/bootstrap.js"></script>
+  <script src="options.js"></script>
+</footer>
+</html>
