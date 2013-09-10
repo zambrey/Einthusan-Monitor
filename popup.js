@@ -10,19 +10,24 @@ var homeUrl = "http://www.einthusan.com/",
 
 {
 	setTimeout(render, 50);
-	window.onclose = function(){alert('window closed')};
 }
 
 function render()
 {
 	if(chrome.extension.getBackgroundPage().isDataReady)
 	{
-		var pi = document.getElementById('progressIndicatorDiv');
+		var pi = document.getElementById('progressIndicatorDiv'),startLang;
 		pi.style.display = 'none';
 		backgroundPage = chrome.extension.getBackgroundPage();
 		languages = backgroundPage.languages;
 		displayLanguageButtons(languages);
-		getMoviesForLanguage(languages[0]);
+		startLang = localStorage.getItem('defaultLanguage');
+		if(!startLang)
+		{
+			startLang = languages[0];
+			localStorage.setItem('defaultLanguage',startLang);
+		}
+		getMoviesForLanguage(startLang);
 	}
 	else
 	{
@@ -91,7 +96,7 @@ function displayMovieTitles(movieObjects)
 		coverTd = document.createElement('td');
 		cover = document.createElement('img');
 		cover.setAttribute('src',homeUrl+movieCover);
-		cover.setAttribute('style','height:30px');
+		cover.setAttribute('style','height:52px');
 		cover.setAttribute('class','img-rounded');
 		coverTd.appendChild(cover);
 		indexTd.innerText = i+1+".";

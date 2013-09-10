@@ -16,6 +16,7 @@ var languages = new Array(),
 	MOVIES_REQUEST_CONST = "moviesRequest",
 	RESET_NEW_FLAGS = "resetNewFlags";
 	FLAGS_RESET = "flagsReset",
+	lastUpdated = 0,
 	REFRESH_INTERVAL = 3*60*60*1000; //Three hour
 
 {
@@ -25,17 +26,13 @@ var languages = new Array(),
 function initiate()
 {
 	sendXMLRequest(homeUrl, LANGUAGE_REQUEST_CONST, null);
-	setTimeout(initiate, REFRESH_INTERVAL);
+	setTimeout(initiate, getRefreshInterval());
+	lastUpdated = new Date().getTime();
 }
 
 function getMovieTitlesForLanguage(languageName)
 {
 	sendXMLRequest(homeUrl+queryPath+languageName.toLowerCase(), MOVIES_REQUEST_CONST, languageName);
-}
-
-function capitaliseFirstLetter(string)
-{
-	return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
 function sendXMLRequest(url, requestType, languageName, responseHandler)
@@ -181,6 +178,12 @@ function fireNotification()
 	}
 }
 
+
+function capitaliseFirstLetter(string)
+{
+	return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
 function sumUpArray(arr)
 {
 	var sum = 0;
@@ -189,6 +192,33 @@ function sumUpArray(arr)
 		sum += arr[i];
 	}
 	return sum;
+}
+
+function getRefreshInterval()
+{
+	var refreshTimeVal = parseInt(localStorage.getItem("refreshTimeVal")),
+		refreshTimeUnit = localStorage.getItem("refreshTimeUnit"),
+		refreshInterval = 0;
+	if(!refreshTimeVal || !refreshTimeUnit)
+	{
+		refreshInterval = REFRESH_INTERVAL;
+		localStorage.setItem('refreshTimeVal','3');
+		localStorage.setItem('refreshTimeUnit','Hours');
+	}
+	else
+	{
+		refreshInterval = refreshTimeVal * 1000;
+		if(refreshTimeUnit == "Minutes")
+		{
+			refreshInterval = refreshInterval * 60;
+		}
+		if(refreshTimeUnit == "Hours")
+		{
+			refreshInterval = refreshInterval * 60 * 60;
+		}
+	} 
+	//alert(refreshInterval);
+	return refreshInterval;	
 }
 
 function MovieObject(title, coverSrc, watchURL)

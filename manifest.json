@@ -24,13 +24,14 @@
 
    "background": 
    {
-    "scripts": ["background.min.js"]
+    "scripts": ["background.js"]
     },
 
     "options_page":"options.html",
 
     "permissions": ["tabs",
     "cookies",
+    "storage",
     "https://www.einthusan.com/", 
     "http://www.einthusan.com/"]
   }
