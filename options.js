@@ -30,11 +30,13 @@ var backgroundPage = chrome.extension.getBackgroundPage(),
       	else
       	{
       		localStorage.setItem("refreshTimeUnit",$(this).text());
+      		sendMessage(backgroundPage.INITIATE_AFRESH);
       	}
    });
 
    $("#timeValue").change(function(){
    		localStorage.setItem('refreshTimeVal',$(this).val());
+   		sendMessage(backgroundPage.INITIATE_AFRESH);
    });
 
 });
@@ -65,4 +67,12 @@ var backgroundPage = chrome.extension.getBackgroundPage(),
  	arr[0] = milli;
  	return arr;
  }
+
+ function sendMessage(msgType)
+{
+	var msgObject = new Object();
+	msgObject.messageType = msgType;
+	chrome.extension.sendRequest(msgObject, function(response){
+	});
+}
  

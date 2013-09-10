@@ -14,7 +14,8 @@ var languages = new Array(),
 	isDataReady = false,
 	LANGUAGE_REQUEST_CONST = "languageRequest",
 	MOVIES_REQUEST_CONST = "moviesRequest",
-	RESET_NEW_FLAGS = "resetNewFlags";
+	RESET_NEW_FLAGS = "resetNewFlags",
+	INITIATE_AFRESH = "initiateAfresh",
 	FLAGS_RESET = "flagsReset",
 	lastUpdated = 0,
 	REFRESH_INTERVAL = 3*60*60*1000; //Three hour
@@ -217,7 +218,6 @@ function getRefreshInterval()
 			refreshInterval = refreshInterval * 60 * 60;
 		}
 	} 
-	//alert(refreshInterval);
 	return refreshInterval;	
 }
 
@@ -267,6 +267,9 @@ chrome.extension.onRequest.addListener(
 				resetNewFlags(request.language);
 				sendResponse({messageType: FLAGS_RESET, language:request.language});
 			}
-			
+		}
+		if(request.messageType == INITIATE_AFRESH)
+		{
+			initiate();
 		}	
 	});
