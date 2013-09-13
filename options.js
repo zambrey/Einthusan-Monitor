@@ -1,3 +1,6 @@
+/*
+ * Ameya Zambre
+ */
 var backgroundPage = chrome.extension.getBackgroundPage(),
 	defaultLang = localStorage.getItem("defaultLanguage"), /*Should go into local storage*/
 	timeVal = localStorage.getItem('refreshTimeVal'), 
