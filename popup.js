@@ -14,6 +14,21 @@ var homeUrl = "http://www.einthusan.com/",
 
 function render()
 {
+	$(".icon-search").click(function(){
+		if($(".icon-search").css('display')=='block')
+		{
+			$(".icon-search").css('display','none'); 
+			$('.icon-remove').css('display','block');
+			$('.form-search').css('display','block');	
+			$('#searchDiv').css({'background-color':'#800000','height':'38px'});
+		}
+		$(".icon-remove").click(function(){
+			$(".icon-search").css('display','block'); 
+			$('.icon-remove').css('display','none');
+			$('.form-search').css('display','none');
+			$('#searchDiv').css({'background-color':'none','height':'0'});		
+		})
+	});
 	if(chrome.extension.getBackgroundPage().isDataReady)
 	{
 		var pi = document.getElementById('progressIndicatorDiv'),startLang;
@@ -86,27 +101,41 @@ function displayMovieTitles(movieObjects)
 	{
 		movieTitle = movieObjects[i].movieTitle;
 		movieCover = movieObjects[i].movieCover;
+		movieDetails = movieObjects[i].movieDetails;
 		tr = document.createElement('tr');
 		if(movieObjects[i].isNew)
 		{
 			tr.setAttribute('class','warning');
 		}
+		var holderDiv = document.createElement('div');
 		td = document.createElement('td');
-		indexTd = document.createElement('td');
-		coverTd = document.createElement('td');
+		//indexTd = document.createElement('td');
+		//coverTd = document.createElement('td');
 		cover = document.createElement('img');
 		cover.setAttribute('src',homeUrl+movieCover);
-		cover.setAttribute('style','height:52px');
-		cover.setAttribute('class','img-rounded');
-		coverTd.appendChild(cover);
-		indexTd.innerText = i+1+".";
+		cover.setAttribute('style','height:60px; float:left; margin-right:4px;');
+		//cover.setAttribute('class','img-rounded');
+		//coverTd.appendChild(cover);
+		//indexTd.innerText = i+1+".";
 		nameDiv = document.createElement('div');
 		nameDiv.innerHTML = movieTitle;
-		td.appendChild(nameDiv);
+		nameDiv.setAttribute('style','font-weight:bold;');
+		descDiv = document.createElement('div');
+		descDiv.innerHTML = movieDetails;
+		descDiv.setAttribute('style','height:40px; overflow:auto;color:#555555; font-size:8pt;');
+		holderDiv.appendChild(cover);
+		holderDiv.appendChild(nameDiv);
+		holderDiv.appendChild(descDiv);
+		//td.appendChild(nameDiv);
+		//td.appendChild(descDiv);
 		//tr.appendChild(indexTd);
-		tr.appendChild(coverTd);
+		//tr.appendChild(coverTd);
+		
+		td.appendChild(holderDiv);
 		tr.appendChild(td);
+		
 		tr.style.cursor = 'pointer';
+		//tr.style.height = '76px';
 		clickHandler = getClickHandler(homeUrl+movieObjects[i].watchURL);
 		tr.addEventListener('click',clickHandler);
 		tbody.appendChild(tr);
@@ -130,8 +159,8 @@ function displayLanguageButtons(languages)
 		lang,
 		td,
 		div,
-		badge
-;	if(languages.length>0 && languagesTable)
+		badge;	
+	if(languages.length>0 && languagesTable)
 	{
 		tr =document.createElement('tr');
 		for(i=0; i<languages.length; i++)
@@ -142,11 +171,11 @@ function displayLanguageButtons(languages)
 			button.innerHTML = languages[i];
 			lang = languages[i];
 			button.addEventListener('click',function(){getMovieTitles(this);});
-			td = document.createElement('td');
-			td.setAttribute('style','border-top:none;');
-			div = document.createElement('div');
-			div.setAttribute('style','position:relative;');
-			div.appendChild(button);
+			//td = document.createElement('td');
+			//td.setAttribute('style','border-top:none;');
+			//div = document.createElement('div');
+			//div.setAttribute('style','position:relative;');
+			//div.appendChild(button);
 			if(backgroundPage.newMoviesCnt[i]>0)
 			{
 				badge = document.createElement('span');
@@ -155,10 +184,13 @@ function displayLanguageButtons(languages)
 				badge.innerText = backgroundPage.newMoviesCnt[i];	
 				div.appendChild(badge);
 			}
-			td.appendChild(div);
-			tr.appendChild(td);
+
+			button.setAttribute('style','margin:4px;');
+			languagesTable.appendChild(button);
+			//td.appendChild(div);
+			//tr.appendChild(td);
 		}
-		languagesTable.appendChild(tr);
+		//languagesTable.appendChild(tr);
 	}
 }
 

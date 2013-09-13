@@ -75,15 +75,21 @@ function handleXMLRequestResponse(requestType, languageName, responseText)
 		var	languageIndex = languages.indexOf(capitaliseFirstLetter(languageName)),
 			movieObjArray, 
 			movieElems, 
-			movieCovers;
+			movieCovers,
+			movieDetails;
 		doc= document.implementation.createHTMLDocument("movies");
 		doc.documentElement.innerHTML = responseText;
 		movieObjArray = new Array();
 		movieElems = doc.getElementsByClassName("movie-title");
 		movieCovers = doc.getElementsByClassName("movie-cover-wrapper");
+		movieDetails = doc.getElementsByClassName("desc_body");
 		for(i=0; i<movieElems.length; i++)
 		{
-			movieObjArray.push(new MovieObject(movieElems[i].innerHTML.split(' - ')[0],movieCovers[i].firstChild.getAttribute('src'),movieCovers[i].getAttribute('href')));
+			movieDetails[i].removeChild(movieDetails[i].childNodes[1]);
+			movieObjArray.push(new MovieObject(	movieElems[i].innerHTML.split(' - ')[0],
+												movieCovers[i].firstChild.getAttribute('src'),
+												"Starring "+movieDetails[i].innerText.substring(3),
+												movieCovers[i].getAttribute('href')));
 		}
 		fetchedTitles[languageIndex] = movieObjArray;
 		updateNumberOfNewMovies(languageName, movieObjArray);
@@ -221,11 +227,12 @@ function getRefreshInterval()
 	return refreshInterval;	
 }
 
-function MovieObject(title, coverSrc, watchURL)
+function MovieObject(title, coverSrc, details, watchURL)
 {
 	var mo =  new Object();
 	mo.movieTitle = title;
 	mo.movieCover = coverSrc;
+	mo.movieDetails = details;
 	mo.watchURL = watchURL;
 	mo.isNew = false;
 	return mo;
