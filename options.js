@@ -1,4 +1,5 @@
 /*
+ * Author
  * Ameya Zambre
  */
 var backgroundPage = chrome.extension.getBackgroundPage(),
