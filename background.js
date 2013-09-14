@@ -3,37 +3,71 @@
  * Ameya Zambre
  * ameyazambre@gmail.com
  */
-var languages = new Array(),
-	fetchedTitles = new Array(),
-	done = 4, 
-	ok = 200,
-	homeUrl = "http://www.einthusan.com/",
-	queryPath = "index.php?lang=",
-	newMoviesCnt,
+var backgroundObject = null;
+var CONSTANTS = null;
+var newMoviesCnt,
 	langsChecked,
 	isDataReady = false,
-	LANGUAGE_REQUEST_CONST = "languageRequest",
-	MOVIES_REQUEST_CONST = "moviesRequest",
-	RESET_NEW_FLAGS = "resetNewFlags",
-	INITIATE_AFRESH = "initiateAfresh",
-	FLAGS_RESET = "flagsReset",
-	lastUpdated = 0,
+	lastUpdated = 0;
 	REFRESH_INTERVAL = 3*60*60*1000; //Three hour
 
 {
+	if(!backgroundObject)
+		backgroundObject = new BackgroundObject();
+	if(!CONSTANTS)
+		CONSTANTS = new constants();
 	initiate();
+}
+
+function BackgroundObject()
+{
+	var object = new Object();
+	object.ContentManager = new ContentManager();
+	object.PreferencesManager = new PreferencesManager();
+	object.CookieManager = new CookieManager();
+	//object.CommunicationManger = new CommunicationManger();
+	return object;
+}
+
+function constants()
+{
+	var object = new Object();
+	
+	//CONSTANT VALUES
+	object.HOME_URL = "http://www.einthusan.com/";
+	object.QUERY_PATH = "index.php?lang=";
+	
+	//PREFERENCE RELATED CONSTANTS
+	object.DEF_LANG_PREF = "defaultLanguagePref";
+	object.REFRESH_TIME_VAL_PREF = "refreshTimeValPref";
+	object.REFRESH_TIME_UNIT_PREF = "refreshTimeUnitPref";
+	object.DEFAULT_REFRESH_TIME_VALUE = "3";
+	object.DEFAULT_REFRESH_TIME_UNIT = "Hours";
+	
+	//EXTERNAL COMMUNICATION KEYS
+	object.LANGUAGES_REQUEST = "languageRequest";
+	object.MOVIES_REQUEST = "moviesRequest";
+
+	//INTER-SCRIPT COMMUNICATION KEYS
+	object.RESET_NEW_FLAGS = "resetNewFlags";
+	object.INITIATE_AGAIN = "initiateAgain";
+	object.NEW_FLAGS_RESET_DONE = "newFlagsReset";
+
+	//NUMERICAL CONSTANT VALUES
+
+	return object;
 }
 
 function initiate()
 {
-	sendXMLRequest(homeUrl, LANGUAGE_REQUEST_CONST, null);
+	sendXMLRequest(CONSTANTS.HOME_URL, CONSTANTS.LANGUAGES_REQUEST, null);
 	setTimeout(initiate, getRefreshInterval());
 	lastUpdated = new Date().getTime();
 }
 
 function getMovieTitlesForLanguage(languageName)
 {
-	sendXMLRequest(homeUrl+queryPath+languageName.toLowerCase(), MOVIES_REQUEST_CONST, languageName);
+	sendXMLRequest(CONSTANTS.HOME_URL+CONSTANTS.QUERY_PATH+languageName.toLowerCase(), CONSTANTS.MOVIES_REQUEST, languageName);
 }
 
 function sendXMLRequest(url, requestType, languageName, responseHandler)
@@ -47,33 +81,36 @@ function sendXMLRequest(url, requestType, languageName, responseHandler)
 
 function handleXMLRequestResponse(requestType, languageName, responseText)
 {
-	if(requestType == LANGUAGE_REQUEST_CONST)
+	if(requestType == CONSTANTS.LANGUAGES_REQUEST)
 	{
 		var doc = document.implementation.createHTMLDocument("languages"),langs;
 		doc.documentElement.innerHTML = responseText;
 		langs = doc.getElementsByTagName('li');
-		languages = [];
+		//languages = [];
+		backgroundObject.ContentManager.resetLanguages();
 		for(i=0; i<langs.length; i++)
 		{
 			langName = langs[i].firstChild.innerHTML;
-			languages.push(langName);
+			//languages.push(langName);
+			backgroundObject.ContentManager.addLanguage(langName);
 		}
-		fetchedTitles.length = languages.length;
-		newMoviesCnt = new Array(); newMoviesCnt.length = languages.length;
-		langsChecked = new Array(); langsChecked.length = languages.length;
+		//fetchedTitles.length = languages.length;
+		backgroundObject.ContentManager.resetMovies();
+		newMoviesCnt = new Array(); newMoviesCnt.length = backgroundObject.ContentManager.languages.length;
+		langsChecked = new Array(); langsChecked.length = backgroundObject.ContentManager.languages.length;
 
-		for(i=0; i<languages.length; i++)
+		for(i=0; i<backgroundObject.ContentManager.languages.length; i++)
 		{
 			langsChecked[i] = 0;
 			newMoviesCnt[i] = 0;
-			getMovieTitlesForLanguage(languages[i]);
+			getMovieTitlesForLanguage(backgroundObject.ContentManager.languages[i]);
 		}
 		setTimeout(fireNotification, 1000);
 	}
-	else if(requestType == MOVIES_REQUEST_CONST)
+	else if(requestType == CONSTANTS.MOVIES_REQUEST)
 	{	
-		var	languageIndex = languages.indexOf(capitaliseFirstLetter(languageName)),
-			movieObjArray, 
+		//var	languageIndex = backgroundObject.ContentManager.getLanguageIndex(capitaliseFirstLetter(languageName)),
+		var	movieObjArray, 
 			movieElems, 
 			movieCovers,
 			movieDetails;
@@ -91,7 +128,8 @@ function handleXMLRequestResponse(requestType, languageName, responseText)
 												"Starring "+movieDetails[i].innerText.substring(3),
 												movieCovers[i].getAttribute('href')));
 		}
-		fetchedTitles[languageIndex] = movieObjArray;
+		//fetchedTitles[languageIndex] = movieObjArray;
+		backgroundObject.ContentManager.setMoviesData(capitaliseFirstLetter(languageName), movieObjArray);
 		updateNumberOfNewMovies(languageName, movieObjArray);
 	}
 }
@@ -100,7 +138,7 @@ function getResponseHandler(req, requestType, languageName, responseHandler)
 {
 	return function()
 	{
-		if(req.readyState == done && req.status == ok)
+		if(req.readyState == 4 && req.status == 200)
 		{
 			if(responseHandler)
 			{
@@ -140,41 +178,42 @@ function updateNumberOfNewMovies(languageName, movieObjArray)
 {
 	var moviesCookie = null,
 		details = new Object(),
-		languageIndex = languages.indexOf(languageName);
-	details.url = homeUrl;
+		languageIndex = backgroundObject.ContentManager.getLanguageIndex(languageName);
+	details.url = CONSTANTS.HOME_URL;
 	details.name = languageName.toLowerCase()+'Movies';
-	chrome.cookies.get(details, function(cookie){
-		if(cookie)
+	backgroundObject.CookieManager.getCookie(languageName, compareNewDataAgainstCookie);
+}
+
+function compareNewDataAgainstCookie(language, moviesCookie)
+{
+	var languageIndex = backgroundObject.ContentManager.getLanguageIndex(language),
+		movieObjArray = backgroundObject.ContentManager.getMoviesData(language);
+	if(!moviesCookie)
+	{
+		newMoviesCnt[languageIndex] += movieObjArray.length;
+		for(i=0; i<movieObjArray.length; i++)
 		{
-			moviesCookie = breakCookieString(cookie.value);
+			movieObjArray[i].isNew = true;
 		}
-		if(!moviesCookie)
+	}
+	else
+	{
+		for(i=0; i<movieObjArray.length; i++)
 		{
-			newMoviesCnt[languageIndex] += movieObjArray.length;
-			for(i=0; i<movieObjArray.length; i++)
+			var movieTitle = movieObjArray[i].movieTitle;
+			if(moviesCookie.indexOf(movieTitle) < 0)
 			{
+				newMoviesCnt[languages.indexOf(language)]++;
 				movieObjArray[i].isNew = true;
 			}
-		}
-		else
-		{
-			for(i=0; i<movieObjArray.length; i++)
-			{
-				var movieTitle = movieObjArray[i].movieTitle;
-				if(moviesCookie.indexOf(movieTitle) < 0)
-				{
-					newMoviesCnt[languages.indexOf(languageName)]++;
-					movieObjArray[i].isNew = true;
-				}
-			}	
-		}
-		langsChecked[languageIndex] = 1;
-	});
+		}	
+	}
+	langsChecked[languageIndex] = 1;
 }
 
 function fireNotification()
 {
-	if(sumUpArray(langsChecked) == languages.length)
+	if(sumUpArray(langsChecked) == backgroundObject.ContentManager.languages.length)
 	{
 		isDataReady = true;
 		setBadge();
@@ -203,14 +242,14 @@ function sumUpArray(arr)
 
 function getRefreshInterval()
 {
-	var refreshTimeVal = parseInt(localStorage.getItem("refreshTimeVal")),
-		refreshTimeUnit = localStorage.getItem("refreshTimeUnit"),
+	var refreshTimeVal = parseInt(backgroundObject.PreferencesManager.getPreferenceValue(CONSTANTS.REFRESH_TIME_VAL_PREF)),
+		refreshTimeUnit = backgroundObject.PreferencesManager.getPreferenceValue(CONSTANTS.REFRESH_TIME_UNIT_PREF),
 		refreshInterval = 0;
 	if(!refreshTimeVal || !refreshTimeUnit)
 	{
 		refreshInterval = REFRESH_INTERVAL;
-		localStorage.setItem('refreshTimeVal','3');
-		localStorage.setItem('refreshTimeUnit','Hours');
+		backgroundObject.PreferencesManager.setPreferenceValue(CONSTANTS.REFRESH_TIME_VAL_PREF, CONSTANTS.DEFAULT_REFRESH_TIME_VALUE);
+		backgroundObject.PreferencesManager.setPreferenceValue(CONSTANTS.REFRESH_TIME_UNIT_PREF, CONSTANTS.DEFAULT_REFRESH_TIME_UNIT);
 	}
 	else
 	{
@@ -267,16 +306,173 @@ function setBadge()
 
 chrome.extension.onRequest.addListener(
 	function(request, sender, sendResponse) {
-		if (request.messageType == RESET_NEW_FLAGS)
+		if (request.messageType == CONSTANTS.RESET_NEW_FLAGS)
 		{
 			if(request.language)
 			{
 				resetNewFlags(request.language);
-				sendResponse({messageType: FLAGS_RESET, language:request.language});
+				sendResponse({messageType: CONSTANTS.NEW_FLAGS_RESET_DONE, language:request.language});
 			}
 		}
-		if(request.messageType == INITIATE_AFRESH)
+		if(request.messageType == CONSTANTS.INITIATE_AGAIN)
 		{
 			initiate();
 		}	
 	});
+
+
+
+/*Content Manager*/
+function ContentManager()
+{
+	var contentObject = new Object();
+	contentObject.languages = [];
+	contentObject.movies = [];
+	contentObject.resetLanguages = function()
+	{
+		this.languages = [];
+	}
+	contentObject.resetMovies = function()
+	{
+		this.movies.length = this.languages.length;
+	}
+	contentObject.getLanguageIndex = function(language)
+	{
+		return this.languages.indexOf(language);
+	}
+	contentObject.addLanguage = function(language)
+	{
+		this.languages.push(language);
+	}
+	contentObject.getLanguagesData = function()
+	{
+		return this.languages;
+	}
+	contentObject.getMoviesData = function(language)
+	{	
+		return this.movies[this.getLanguageIndex(language)];
+	}
+	contentObject.getAllMoviesData = function()
+	{
+		return this.movies;
+	}
+	contentObject.setLanguagesData = function(languages)
+	{
+		this.languages = languages;
+	}
+	contentObject.setMoviesData = function(language, moviesData)
+	{
+		this.movies[this.getLanguageIndex(language)] = moviesData;
+	}
+	contentObject.setAllMoviesData = function(moviesData)
+	{
+		this.movies = moviesData;
+	}
+	contentObject.setNewFlag = function(language, index)
+	{
+		this.movies[this.getLanguageIndex(language)][index] = true;
+	}
+	contentObject.isMovieNew = function(movieTitle)
+	{
+		//Implement later
+	}
+	contentObject.resetNewFlags = function(language)
+	{
+		//Implement later	
+	}
+	return contentObject;
+}
+
+/*Preferences Manager*/
+function PreferencesManager()
+{
+	var prefObject =  new Object();
+	prefObject.DEFAULT_LANGUAGE_KEY = "defaultLanguage";
+	prefObject.REFRESH_TIME_VALUE_KEY = "refreshTimeVal";
+	prefObject.REFRESH_TIME_UNIT_KEY = "refreshTimeUnit";
+	prefObject.getPreferenceValue = function(preferenceType)
+	{	
+		return localStorage.getItem(this.getLocalStorageKeyForPreferenceType(preferenceType));
+	}
+	prefObject.setPreferenceValue = function(preferenceType, preferenceValue)
+	{
+		localStorage.setItem(this.getLocalStorageKeyForPreferenceType(preferenceType),preferenceValue);
+	}
+	prefObject.getLocalStorageKeyForPreferenceType = function(preferenceType)
+	{
+		var prefKey = null;
+		if(preferenceType == CONSTANTS.DEF_LANG_PREF)
+		{
+			prefKey = this.DEFAULT_LANGUAGE_KEY;
+		}
+		else if(preferenceType == CONSTANTS.REFRESH_TIME_VAL_PREF)
+		{
+			prefKey = this.REFRESH_TIME_VALUE_KEY;
+		}
+		else if(preferenceType == CONSTANTS.REFRESH_TIME_UNIT_PREF)
+		{
+			prefKey = this.REFRESH_TIME_UNIT_KEY;
+		}
+		return prefKey;
+	}
+	return prefObject;
+}
+
+/*Cookie Manager*/
+function CookieManager()
+{
+	var cookieObject = new Object();
+	cookieObject.cookieValidDuration = 60*60*24*30*12,
+	cookieObject.getCookie = function(language, cookieHandler)
+	{
+		var details = new Object(), oldMovieTitles;
+		details.url = CONSTANTS.HOME_URL;
+		details.name = language.toLowerCase()+'Movies';
+		chrome.cookies.get(details, function(cookie){
+			oldMovieTitles = backgroundObject.CookieManager.processBeforeReturningCookie(cookie.value);
+			if(cookieHandler)
+			{
+				cookieHandler(language, oldMovieTitles)
+			}
+		});
+		return oldMovieTitles;
+	}
+	cookieObject.setCookie = function(language, cookieValue)
+	{
+		var details = new Object();
+		details.url = CONSTANTS.HOME_URL;
+		details.name = language.toLowerCase()+'Movies';
+		details.value = this.processBeforeSettingCookie(cookieValue);
+		details.expirationDate = (new Date().getTime()/1000) + this.cookieValidDuration;
+		chrome.cookies.remove({"url":CONSTANTS.HOME_URL,"name":details.name});
+		chrome.cookies.set(details);
+	}
+	cookieObject.processBeforeReturningCookie = function(cookieString)
+	{
+		var oldMovieTitles,oldMovies;
+		if(cookieString)
+		{
+			oldMovieTitles = new Array()
+			oldMovies = cookieString.split('--');
+			for(i=0; i<oldMovies.length; i++)
+			{
+				oldMovieTitles.push(oldMovies[i]);
+			}
+		}
+		return oldMovieTitles;
+	}
+	cookieObject.processBeforeSettingCookie = function(cookieValue)
+	{
+		var cookieString = '';
+		for(i=0; i<cookieValue.length; i++)
+		{
+			cookieString = cookieString.concat(cookieValue[i].movieTitle);
+			if(i<cookieValue.length-1)
+			{
+				cookieString = cookieString.concat('--');
+			}
+		}
+		return cookieString;
+	}
+	return cookieObject;
+}

@@ -3,17 +3,18 @@
  * Ameya Zambre
  */
 var backgroundPage = chrome.extension.getBackgroundPage(),
-	defaultLang = localStorage.getItem("defaultLanguage"), /*Should go into local storage*/
-	timeVal = localStorage.getItem('refreshTimeVal'), 
-	timeUnit = localStorage.getItem('refreshTimeUnit');
+	defaultLang = backgroundPage.backgroundObject.PreferencesManager.getPreferenceValue(backgroundPage.CONSTANTS.DEF_LANG_PREF),
+	timeVal = backgroundPage.backgroundObject.PreferencesManager.getPreferenceValue(backgroundPage.CONSTANTS.REFRESH_TIME_VAL_PREF),
+	timeUnit = backgroundPage.backgroundObject.PreferencesManager.getPreferenceValue(backgroundPage.CONSTANTS.REFRESH_TIME_UNIT_PREF);
 
 {
 	if(backgroundPage)
 	{
-		var listHtml = "";
-		for(i=0; i<backgroundPage.languages.length; i++)
+		var listHtml = "",
+			languages = backgroundPage.backgroundObject.ContentManager.getLanguagesData();
+		for(i=0; i<languages.length; i++)
 		{
-			listHtml = listHtml + "<li><a href=#>"+backgroundPage.languages[i]+"</a></li>";
+			listHtml = listHtml + "<li><a href=#>"+languages[i]+"</a></li>";
 		}
 		$("#languageList").html(listHtml);
 		$("#selectedLanguage").html(defaultLang+" <span class=\"caret\"></span>");
@@ -29,18 +30,18 @@ var backgroundPage = chrome.extension.getBackgroundPage(),
 		$(this).parent().parent().prev().html($(this).text()+" <span class=\"caret\"></span>");
       	if($(this).parent().parent().attr('id') == "languageList")
       	{
-      		localStorage.setItem("defaultLanguage",$(this).text());
+      		backgroundPage.backgroundObject.PreferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.DEF_LANG_PREF, $(this).text());
       	}
       	else
       	{
-      		localStorage.setItem("refreshTimeUnit",$(this).text());
-      		sendMessage(backgroundPage.INITIATE_AFRESH);
+      		backgroundPage.backgroundObject.PreferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.REFRESH_TIME_UNIT_PREF, $(this).text());
+      		sendMessage(backgroundPage.CONSTANTS.INITIATE_AGAIN);
       	}
    });
 
    $("#timeValue").change(function(){
-   		localStorage.setItem('refreshTimeVal',$(this).val());
-   		sendMessage(backgroundPage.INITIATE_AFRESH);
+   		backgroundPage.backgroundObject.PreferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.REFRESH_TIME_VAL_PREF, $(this).val());
+   		sendMessage(backgroundPage.CONSTANTS.INITIATE_AGAIN);
    });
 
 });

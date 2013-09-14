@@ -3,220 +3,19 @@
  * Ameya Zambre
  * ameyazambre@gmail.com
  */
-var homeUrl = "http://www.einthusan.com/",
-	languages,
-	cookieValidDuration = 60*60*24*30*12,
-	backgroundPage = null;
+var backgroundPage = null,
+	popupObject = new PopupObject();
 
 {
-	setTimeout(render, 50);
+	setTimeout(popupObject.PopupRenderManager.initRender, 50);
 }
 
-function render()
+function PopupObject()
 {
-	$(".icon-search").click(function(){
-		if($(".icon-search").css('display')=='block')
-		{
-			$(".icon-search").css('display','none'); 
-			$('.icon-remove').css('display','block');
-			$('.form-search').css('display','block');	
-			$('#searchDiv').css({'background-color':'#800000','height':'38px'});
-		}
-		$(".icon-remove").click(function(){
-			$(".icon-search").css('display','block'); 
-			$('.icon-remove').css('display','none');
-			$('.form-search').css('display','none');
-			$('#searchDiv').css({'background-color':'none','height':'0'});		
-		})
-	});
-	if(chrome.extension.getBackgroundPage().isDataReady)
-	{
-		var pi = document.getElementById('progressIndicatorDiv'),startLang;
-		pi.style.display = 'none';
-		backgroundPage = chrome.extension.getBackgroundPage();
-		languages = backgroundPage.languages;
-		displayLanguageButtons(languages);
-		startLang = localStorage.getItem('defaultLanguage');
-		if(!startLang)
-		{
-			startLang = languages[0];
-			localStorage.setItem('defaultLanguage',startLang);
-		}
-		getMoviesForLanguage(startLang);
-	}
-	else
-	{
-		pi = document.getElementById('progressIndicatorDiv');
-		pi.style.display = 'block';
-		setTimeout(render, 200);
-	}
-}
-
-function getMovieTitles(button)
-{
-	var languageName = button.innerText;
-	getMoviesForLanguage(languageName);
-}
-
-function getMoviesForLanguage(languageName)
-{
-	document.getElementById(languageName.toLowerCase()+"Button").setAttribute('class','btn btn-success');
-	for(i=0; i<languages.length; i++)
-	{
-		var langButton = document.getElementById(languages[i].toLowerCase()+"Button");
-		if(languages[i] == languageName)
-		{
-			langButton.setAttribute('class','btn btn-success');
-		}
-		else
-		{
-			langButton.setAttribute('class','btn');
-		}
-	}
-	var index = languages.indexOf(languageName),
-		movieList = backgroundPage.fetchedTitles[index];
-	displayMovieTitles(movieList);
-	setCookie(languageName.toLowerCase(), movieList);
-	if(backgroundPage.newMoviesCnt[index]>0)
-	{	
-		sendMessage(backgroundPage.RESET_NEW_FLAGS, languageName);
-	}
-}
-
-function displayMovieTitles(movieObjects)
-{
-	var titleTable = document.getElementById('movieTitles'),
-		tbody = document.createElement('tbody'),
-		movieTitle,
-		movieCover,
-		tr,
-		td,
-		indexTd,
-		coverTd,
-		cover,
-		nameDiv,
-		clickHandler;
-	titleTable.innerHTML = '';  //Removing all other names
-	for(i=0; i<movieObjects.length; i++)
-	{
-		movieTitle = movieObjects[i].movieTitle;
-		movieCover = movieObjects[i].movieCover;
-		movieDetails = movieObjects[i].movieDetails;
-		tr = document.createElement('tr');
-		if(movieObjects[i].isNew)
-		{
-			tr.setAttribute('class','warning');
-		}
-		var holderDiv = document.createElement('div');
-		td = document.createElement('td');
-		//indexTd = document.createElement('td');
-		//coverTd = document.createElement('td');
-		cover = document.createElement('img');
-		cover.setAttribute('src',homeUrl+movieCover);
-		cover.setAttribute('style','height:60px; float:left; margin-right:4px;');
-		//cover.setAttribute('class','img-rounded');
-		//coverTd.appendChild(cover);
-		//indexTd.innerText = i+1+".";
-		nameDiv = document.createElement('div');
-		nameDiv.innerHTML = movieTitle;
-		nameDiv.setAttribute('style','font-weight:bold;');
-		descDiv = document.createElement('div');
-		descDiv.innerHTML = movieDetails;
-		descDiv.setAttribute('style','height:40px; overflow:auto;color:#555555; font-size:8pt;');
-		holderDiv.appendChild(cover);
-		holderDiv.appendChild(nameDiv);
-		holderDiv.appendChild(descDiv);
-		//td.appendChild(nameDiv);
-		//td.appendChild(descDiv);
-		//tr.appendChild(indexTd);
-		//tr.appendChild(coverTd);
-		
-		td.appendChild(holderDiv);
-		tr.appendChild(td);
-		
-		tr.style.cursor = 'pointer';
-		//tr.style.height = '76px';
-		clickHandler = getClickHandler(homeUrl+movieObjects[i].watchURL);
-		tr.addEventListener('click',clickHandler);
-		tbody.appendChild(tr);
-	}   
-	titleTable.appendChild(tbody);
-}
-
-function getClickHandler(watchURL)
-{
-	return function()
-	{
-		chrome.tabs.create({"url":watchURL},function(){});
-	}
-}
-
-function displayLanguageButtons(languages)
-{
-	var languagesTable = document.getElementById('languageButtons'),
-		tr,
-		button,
-		lang,
-		td,
-		div,
-		badge;	
-	if(languages.length>0 && languagesTable)
-	{
-		tr =document.createElement('tr');
-		for(i=0; i<languages.length; i++)
-		{
-			button = document.createElement('button');
-			button.setAttribute('class','btn');
-			button.setAttribute('id',languages[i].toLowerCase()+"Button");
-			button.innerHTML = languages[i];
-			lang = languages[i];
-			button.addEventListener('click',function(){getMovieTitles(this);});
-			//td = document.createElement('td');
-			//td.setAttribute('style','border-top:none;');
-			//div = document.createElement('div');
-			//div.setAttribute('style','position:relative;');
-			//div.appendChild(button);
-			if(backgroundPage.newMoviesCnt[i]>0)
-			{
-				badge = document.createElement('span');
-				badge.setAttribute('class','badge badge-warning');
-				badge.setAttribute('style','position:absolute; right:-8px;top:-8px;');
-				badge.innerText = backgroundPage.newMoviesCnt[i];	
-				div.appendChild(badge);
-			}
-
-			button.setAttribute('style','margin:4px;');
-			languagesTable.appendChild(button);
-			//td.appendChild(div);
-			//tr.appendChild(td);
-		}
-		//languagesTable.appendChild(tr);
-	}
-}
-
-function setCookie(languageName, movieObjects)
-{
-	var details = new Object();
-	details.url = homeUrl;
-	details.name = languageName.toLowerCase()+'Movies';
-	details.value = buildCookieString(movieObjects);
-	details.expirationDate = (new Date().getTime()/1000) + cookieValidDuration;
-	chrome.cookies.remove({"url":homeUrl,"name":details.name});
-	chrome.cookies.set(details);
-}
-
-function buildCookieString(movieObjects)
-{
-	var cookieString = '';
-	for(i=0; i<movieObjects.length; i++)
-	{
-		cookieString = cookieString.concat(movieObjects[i].movieTitle);
-		if(i<movieObjects.length-1)
-		{
-			cookieString = cookieString.concat('--');
-		}
-	}
-	return cookieString;
+	var object = new Object();
+	object.PopupRenderManager = new PopupRenderManager();
+	object.PopupInteractionManager = new PopupInteractionManager();
+	return object;
 }
 
 function sendMessage(msgType, languageName)
@@ -230,18 +29,233 @@ function sendMessage(msgType, languageName)
 	chrome.extension.sendRequest(msgObject, function(response){
 		if(response.messageType == backgroundPage.FLAGS_RESET)
 		{
-			updateButtonBadge(languageName);
+			popupObject.PopupRenderManager.removeLanguageControlBadge(languageName);
 		}
 	});
 }
 
-function updateButtonBadge(languageName)
+function PopupRenderManager()
 {
-	var button = document.getElementById(languageName.toLowerCase()+"Button");
-	button.parentNode.removeChild(button.parentNode.lastChild);
-	/*var titleTable = document.getElementById('movieTitles').firstChild;
-	for(i=0; i < titleTable.children.length; i++)
+	var renderObject = new Object();
+	renderObject.initRender = function()
 	{
-		titleTable.children[i].removeAttribute('class');
-	}*/
+		if(chrome.extension.getBackgroundPage().isDataReady)
+		{
+			var startLang, languages;
+			popupObject.PopupRenderManager.hideProgressIndicator();
+			backgroundPage = chrome.extension.getBackgroundPage();
+			languages = backgroundPage.backgroundObject.ContentManager.getLanguagesData();
+			popupObject.PopupRenderManager.renderLanguageControls(languages);
+			startLang = backgroundPage.backgroundObject.PreferencesManager.getPreferenceValue(backgroundPage.CONSTANTS.DEF_LANG_PREF);
+			if(!startLang)
+			{
+				startLang = languages[0];
+				backgroundPage.backgroundObject.PreferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.DEF_LANG_PREF, startLang);
+			}
+			popupObject.PopupRenderManager.renderMoviesForLanguage(startLang);
+		}
+		else
+		{
+			popupObject.PopupRenderManager.showProgressIndicator();
+			setTimeout(popupObject.PopupRenderManager.initRender, 200);
+		}
+	}
+	renderObject.renderLanguageControls = function(languages)
+	{
+		if(!languages)
+		{
+			languages = backgroundPage.backgroundObject.ContentManager.getLanguagesData();
+		}
+		var languagesTable = document.getElementById('languageButtons'),
+			tr,
+			button,
+			lang,
+			td,
+			div,
+			badge;	
+		if(languages.length>0 && languagesTable)
+		{
+			tr =document.createElement('tr');
+			for(i=0; i<languages.length; i++)
+			{
+				button = document.createElement('button');
+				button.setAttribute('class','btn');
+				button.setAttribute('id',languages[i].toLowerCase()+"Button");
+				button.innerHTML = languages[i];
+				lang = languages[i];
+				button.addEventListener('click',function(){popupObject.PopupInteractionManager.languageControlClickHandler(this);});
+				/*if(backgroundPage.newMoviesCnt[i]>0)
+				{
+					badge = document.createElement('span');
+					badge.setAttribute('class','badge badge-warning');
+					badge.setAttribute('style','position:absolute; right:-8px;top:-8px;');
+					badge.innerText = backgroundPage.newMoviesCnt[i];	
+					div.appendChild(badge);
+				}*/
+
+				button.setAttribute('style','margin:4px;');
+				languagesTable.appendChild(button);
+			}
+		}
+	}
+	renderObject.renderSelectedLanguageControl = function(language)
+	{
+		var languages = backgroundPage.backgroundObject.ContentManager.getLanguagesData();
+		for(i=0; i<languages.length; i++)
+		{
+			var langButton = document.getElementById(languages[i].toLowerCase()+"Button");
+			if(languages[i] == language)
+			{
+				langButton.setAttribute('class','btn btn-success');
+			}
+			else
+			{
+				langButton.setAttribute('class','btn');
+			}
+		}
+	}
+	renderObject.renderMoviesForLanguage = function(language)
+	{
+		var languages = backgroundPage.backgroundObject.ContentManager.getLanguagesData();
+		popupObject.PopupRenderManager.renderSelectedLanguageControl(language);
+		var index = languages.indexOf(language),
+			movieList = backgroundPage.backgroundObject.ContentManager.getMoviesData(language);
+		this.renderMoviesTable(movieList);
+		backgroundPage.backgroundObject.CookieManager.setCookie(language.toLowerCase(),movieList);
+		if(backgroundPage.newMoviesCnt[index]>0)
+		{	
+			sendMessage(backgroundPage.RESET_NEW_FLAGS, language);
+		}
+	}
+	renderObject.renderMoviesTable = function(movieObjects)
+	{
+		var titleTable = document.getElementById('movieTitles'),
+			tbody = document.createElement('tbody'),
+			movieTitle,
+			movieCover,
+			tr,
+			td,
+			indexTd,
+			coverTd,
+			cover,
+			nameDiv,
+			clickHandler;
+		titleTable.innerHTML = '';  //Removing all other names
+		for(i=0; i<movieObjects.length; i++)
+		{
+			movieTitle = movieObjects[i].movieTitle;
+			movieCover = movieObjects[i].movieCover;
+			movieDetails = movieObjects[i].movieDetails;
+			tr = document.createElement('tr');
+			if(movieObjects[i].isNew)
+			{
+				tr.setAttribute('class','warning');
+			}
+			var holderDiv = document.createElement('div');
+			td = document.createElement('td');
+			cover = document.createElement('img');
+			cover.setAttribute('src',backgroundPage.CONSTANTS.HOME_URL+movieCover);
+			cover.setAttribute('style','height:60px; float:left; margin-right:4px;');
+			nameDiv = document.createElement('div');
+			nameDiv.innerHTML = movieTitle;
+			nameDiv.setAttribute('style','font-weight:bold;');
+			descDiv = document.createElement('div');
+			descDiv.innerHTML = this.formatMovieDescription(movieDetails);
+			descDiv.setAttribute('style','height:40px; overflow:auto;color:#555555; font-size:8pt;');
+			holderDiv.appendChild(cover);
+			holderDiv.appendChild(nameDiv);
+			holderDiv.appendChild(descDiv);
+			
+			td.appendChild(holderDiv);
+			tr.appendChild(td);
+			
+			tr.style.cursor = 'pointer';
+			clickHandler = popupObject.PopupInteractionManager.getMovieRowClickHandler(backgroundPage.CONSTANTS.HOME_URL+movieObjects[i].watchURL);
+			tr.addEventListener('click',clickHandler);
+			tbody.appendChild(tr);
+		}   
+		titleTable.appendChild(tbody);
+	}
+	renderObject.formatMovieDescription = function(description)
+	{
+		var castString = "Starring", directorString = "Directed by", musicString = "Music by",
+			castIndex = description.indexOf(castString),
+			directorIndex = description.indexOf(directorString),
+			musicIndex = description.indexOf(musicString),
+			castValue="",directorValue="",musicValue="",formattedDescription="";
+		castValue = description.substring(castIndex+castString.length, directorIndex);
+		directorValue = description.substring(directorIndex+directorString.length, musicIndex);
+		musicValue = description.substring(musicIndex+musicString.length);
+		formattedDescription = "<i>Cast:</i> "+castValue + "<br><i>Director:</i> "+ directorValue + "<br><i>Music:</i> " + musicValue;
+		return formattedDescription;
+	}
+	renderObject.removeLanguageControlBadge = function(language)
+	{
+		var button = document.getElementById(languageName.toLowerCase()+"Button");
+		button.parentNode.removeChild(button.parentNode.lastChild);
+		/*var titleTable = document.getElementById('movieTitles').firstChild;
+		for(i=0; i < titleTable.children.length; i++)
+		{
+			titleTable.children[i].removeAttribute('class');
+		}*/
+	}
+	renderObject.renderSearchBar = function()
+	{
+		/*Not using this yet*/
+		$(".icon-search").click(function(){
+			if($(".icon-search").css('display')=='block')
+			{
+				$(".icon-search").css('display','none'); 
+				$('.icon-remove').css('display','block');
+				$('.form-search').css('display','block');	
+				$('#searchDiv').css({'background-color':'#800000','height':'38px'});
+			}
+			$(".icon-remove").click(function(){
+				$(".icon-search").css('display','block'); 
+				$('.icon-remove').css('display','none');
+				$('.form-search').css('display','none');
+				$('#searchDiv').css({'background-color':'none','height':'0'});		
+			})
+		});
+	}
+	renderObject.renderToolsBar = function()
+	{
+		/*Implement later*/
+	}
+	renderObject.hideProgressIndicator = function()
+	{
+		var pi = document.getElementById('progressIndicatorDiv');
+		if(pi)
+		{
+			pi.style.display = 'none';	
+		}
+	}
+	renderObject.showProgressIndicator = function()
+	{
+		pi = document.getElementById('progressIndicatorDiv');
+		if(pi)
+		{
+			pi.style.display = 'block';	
+		}
+	}
+	return renderObject;
+}
+
+function PopupInteractionManager()
+{
+	var interactionObject = new Object();
+	interactionObject.languageControlClickHandler = function(control)
+	{
+		var language = control.innerText;
+		//getMoviesForLanguage(languageName);
+		popupObject.PopupRenderManager.renderMoviesForLanguage(language);
+	}
+	interactionObject.getMovieRowClickHandler = function(url)
+	{
+		return function()
+		{
+			chrome.tabs.create({"url":url},function(){});
+		}
+	}
+	return interactionObject;
 }
