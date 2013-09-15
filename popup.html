@@ -9,51 +9,54 @@
     <link rel="stylesheet" type="text/css" href="css/bootstrap.css">
     <title>Einthusan Monitor</title>
     <style>
-      body {
+      body 
+      {
         min-width: 357px;
         /*width: 435px;*/
         overflow-x: hidden;
         overflow-y: hidden; 
       }
 
+      .movieDescDiv::-webkit-scrollbar 
+      {
+        width: 8px;
+      }
 
-      /* Let's get this party started */
-::-webkit-scrollbar {
-    width: 8px;
-}
- 
-/* Track */
-::-webkit-scrollbar-track {
-    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3); 
-    -webkit-border-radius: 5px;
-    border-radius: 5px;
-}
- 
-/* Handle */
-::-webkit-scrollbar-thumb {
-    -webkit-border-radius: 10px;
-    border-radius: 5px;
-    background: rgba(120,120,120,0.8); 
-    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5); 
-}
-::-webkit-scrollbar-thumb:window-inactive {
-  background: rgba(100,100,100,0.4); 
-}
+      .movieDescDiv::-webkit-scrollbar-track 
+      {
+        -webkit-box-shadow: inset 0 0 4px rgba(120,120,120,1); 
+      }
 
+      .movieDescDiv::-webkit-scrollbar-thumb 
+      {
+        background: rgba(128,0,0,1); 
+        -webkit-box-shadow: inset 0 0 8px rgba(255,255,255,1); 
+      }
 
+      .movieDescDiv
+      {
+        overflow:hidden; 
+      }
+
+      .movieDescDiv:hover
+      {
+        overflow-y:scroll; 
+      }
+
+      .movieNameDiv
+      {
+        
+      }
     </style>
     <script src="popup.js"></script>
     <script src="js/jquery-2.0.3.min.js"></script>
   </head>
   <body>
     <div id="progressIndicatorDiv" style='display:none;'> 
-      <div class="progress progress-success progress-striped active" style="margin-left:103px; margin-top:40px; margin-bottom:0px; width:150px;">
+      <div class="progress progress-success progress-striped active" style="margin-left:103px; margin-top:20px; width:150px;">
         <div class="bar" style="width: 100%;"></div>
       </div>
     </div>
-    <!-- <table id='languageButtons' class='table' style='margin-top:2 px;margin-bottom:0;'>
-    </table> -->
-
     <!-- <div id='searchDiv' style="position:absolute; width:100%; display:block;">
       <i class='icon-search' style='display:block;position:absolute; left:4px; top:12px;'></i>
       <form class="form-search" style='display:none;position:absolute; left:22px; top:4px;'>
@@ -64,11 +67,9 @@
       </form>
       <i class='icon-remove icon-white' style='display:none;position:absolute; left:4px; top:12px;'></i>
     </div> -->
-
-    <div id='languageButtons' class='' style='margin-top:2px;margin-bottom:5px;text-align:center;'>
-      
+    <div id='languageButtons' class='' style='opacity:0; margin-top:2px;margin-bottom:5px;text-align:center;-webkit-transition:opacity 0.5s ease-out;'>
     </div>
-    <table id='movieTitles' class='table table-hover' style='margin-bottom:0;'>
+    <table id='movieTitles' class='table table-hover' style='opacity:0; margin-bottom:0;-webkit-transition:opacity 0.5s ease-out;'>
     </table>
     <!-- <div id='toolsDiv' style="position:absolute; bottom:0; width:100%; display:block;">
       <i class='icon-search' style='display:block;position:absolute; left:4px; top:12px;'></i>

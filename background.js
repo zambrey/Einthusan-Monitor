@@ -16,7 +16,7 @@ var newMoviesCnt,
 		backgroundObject = new BackgroundObject();
 	if(!CONSTANTS)
 		CONSTANTS = new constants();
-	initiate();
+	setTimeout(initiate,5000);
 }
 
 function BackgroundObject()
@@ -25,7 +25,6 @@ function BackgroundObject()
 	object.ContentManager = new ContentManager();
 	object.PreferencesManager = new PreferencesManager();
 	object.CookieManager = new CookieManager();
-	//object.CommunicationManger = new CommunicationManger();
 	return object;
 }
 
@@ -86,30 +85,26 @@ function handleXMLRequestResponse(requestType, languageName, responseText)
 		var doc = document.implementation.createHTMLDocument("languages"),langs;
 		doc.documentElement.innerHTML = responseText;
 		langs = doc.getElementsByTagName('li');
-		//languages = [];
 		backgroundObject.ContentManager.resetLanguages();
 		for(i=0; i<langs.length; i++)
 		{
 			langName = langs[i].firstChild.innerHTML;
-			//languages.push(langName);
 			backgroundObject.ContentManager.addLanguage(langName);
 		}
-		//fetchedTitles.length = languages.length;
 		backgroundObject.ContentManager.resetMovies();
-		newMoviesCnt = new Array(); newMoviesCnt.length = backgroundObject.ContentManager.languages.length;
-		langsChecked = new Array(); langsChecked.length = backgroundObject.ContentManager.languages.length;
+		newMoviesCnt = new Array(); newMoviesCnt.length = backgroundObject.ContentManager.getLanguagesData().length;
+		langsChecked = new Array(); langsChecked.length = backgroundObject.ContentManager.getLanguagesData().length;
 
-		for(i=0; i<backgroundObject.ContentManager.languages.length; i++)
+		for(i=0; i<backgroundObject.ContentManager.getLanguagesData().length; i++)
 		{
 			langsChecked[i] = 0;
 			newMoviesCnt[i] = 0;
-			getMovieTitlesForLanguage(backgroundObject.ContentManager.languages[i]);
+			getMovieTitlesForLanguage(backgroundObject.ContentManager.getLanguagesData()[i]);
 		}
 		setTimeout(fireNotification, 1000);
 	}
 	else if(requestType == CONSTANTS.MOVIES_REQUEST)
 	{	
-		//var	languageIndex = backgroundObject.ContentManager.getLanguageIndex(capitaliseFirstLetter(languageName)),
 		var	movieObjArray, 
 			movieElems, 
 			movieCovers,
@@ -203,8 +198,12 @@ function compareNewDataAgainstCookie(language, moviesCookie)
 			var movieTitle = movieObjArray[i].movieTitle;
 			if(moviesCookie.indexOf(movieTitle) < 0)
 			{
-				newMoviesCnt[languages.indexOf(language)]++;
+				newMoviesCnt[backgroundObject.ContentManager.getLanguagesData().indexOf(language)]++;
 				movieObjArray[i].isNew = true;
+			}
+			else
+			{
+				break;
 			}
 		}	
 	}
@@ -213,7 +212,7 @@ function compareNewDataAgainstCookie(language, moviesCookie)
 
 function fireNotification()
 {
-	if(sumUpArray(langsChecked) == backgroundObject.ContentManager.languages.length)
+	if(sumUpArray(langsChecked) == backgroundObject.ContentManager.getLanguagesData().length)
 	{
 		isDataReady = true;
 		setBadge();
@@ -279,8 +278,8 @@ function MovieObject(title, coverSrc, details, watchURL)
 
 function resetNewFlags(language)
 {
-	var index = languages.indexOf(language),
-		movieList = fetchedTitles[index];
+	var index = backgroundObject.ContentManager.getLanguagesData().indexOf(language),
+		movieList = backgroundObject.ContentManager.getMoviesData(language);
 	newMoviesCnt[index] = 0;
 	for(i=0; i<movieList.length; i++)
 	{
@@ -425,11 +424,14 @@ function CookieManager()
 	cookieObject.cookieValidDuration = 60*60*24*30*12,
 	cookieObject.getCookie = function(language, cookieHandler)
 	{
-		var details = new Object(), oldMovieTitles;
+		var details = new Object(), oldMovieTitles = null;
 		details.url = CONSTANTS.HOME_URL;
 		details.name = language.toLowerCase()+'Movies';
 		chrome.cookies.get(details, function(cookie){
-			oldMovieTitles = backgroundObject.CookieManager.processBeforeReturningCookie(cookie.value);
+			if(cookie)
+			{
+				oldMovieTitles = backgroundObject.CookieManager.processBeforeReturningCookie(cookie.value);
+			}
 			if(cookieHandler)
 			{
 				cookieHandler(language, oldMovieTitles)

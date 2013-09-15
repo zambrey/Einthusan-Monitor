@@ -22,12 +22,12 @@ function sendMessage(msgType, languageName)
 {
 	var msgObject = new Object();
 	msgObject.messageType = msgType;
-	if(msgType == backgroundPage.RESET_NEW_FLAGS)
+	if(msgType == backgroundPage.CONSTANTS.RESET_NEW_FLAGS)
 	{
 		msgObject.language = languageName;
 	}
 	chrome.extension.sendRequest(msgObject, function(response){
-		if(response.messageType == backgroundPage.FLAGS_RESET)
+		if(response.messageType == backgroundPage.CONSTANTS.NEW_FLAGS_RESET_DONE)
 		{
 			popupObject.PopupRenderManager.removeLanguageControlBadge(languageName);
 		}
@@ -72,7 +72,7 @@ function PopupRenderManager()
 			lang,
 			td,
 			div,
-			badge;	
+			badge;
 		if(languages.length>0 && languagesTable)
 		{
 			tr =document.createElement('tr');
@@ -84,19 +84,15 @@ function PopupRenderManager()
 				button.innerHTML = languages[i];
 				lang = languages[i];
 				button.addEventListener('click',function(){popupObject.PopupInteractionManager.languageControlClickHandler(this);});
-				/*if(backgroundPage.newMoviesCnt[i]>0)
+				if(backgroundPage.newMoviesCnt[i]>0)
 				{
-					badge = document.createElement('span');
-					badge.setAttribute('class','badge badge-warning');
-					badge.setAttribute('style','position:absolute; right:-8px;top:-8px;');
-					badge.innerText = backgroundPage.newMoviesCnt[i];	
-					div.appendChild(badge);
-				}*/
-
+					this.addLanguageControlBadge(button,backgroundPage.newMoviesCnt[i]);
+				}
 				button.setAttribute('style','margin:4px;');
 				languagesTable.appendChild(button);
 			}
 		}
+		languagesTable.style.opacity = 1.0;
 	}
 	renderObject.renderSelectedLanguageControl = function(language)
 	{
@@ -114,6 +110,14 @@ function PopupRenderManager()
 			}
 		}
 	}
+	renderObject.addLanguageControlBadge = function(control, newMoviesNumber)
+	{
+		badge = document.createElement('span');
+		badge.setAttribute('class','badge badge-warning');
+		badge.setAttribute('style','position:absolute; top:25px; opacity:1.0; -webkit-transition:top 1s ease-out, opacity 2s ease-out;');
+		badge.innerText = newMoviesNumber;	
+		control.appendChild(badge);
+	}
 	renderObject.renderMoviesForLanguage = function(language)
 	{
 		var languages = backgroundPage.backgroundObject.ContentManager.getLanguagesData();
@@ -124,7 +128,7 @@ function PopupRenderManager()
 		backgroundPage.backgroundObject.CookieManager.setCookie(language.toLowerCase(),movieList);
 		if(backgroundPage.newMoviesCnt[index]>0)
 		{	
-			sendMessage(backgroundPage.RESET_NEW_FLAGS, language);
+			sendMessage(backgroundPage.CONSTANTS.RESET_NEW_FLAGS, language);
 		}
 	}
 	renderObject.renderMoviesTable = function(movieObjects)
@@ -141,6 +145,7 @@ function PopupRenderManager()
 			nameDiv,
 			clickHandler;
 		titleTable.innerHTML = '';  //Removing all other names
+		titleTable.style.opacity = 0.0;
 		for(i=0; i<movieObjects.length; i++)
 		{
 			movieTitle = movieObjects[i].movieTitle;
@@ -159,9 +164,11 @@ function PopupRenderManager()
 			nameDiv = document.createElement('div');
 			nameDiv.innerHTML = movieTitle;
 			nameDiv.setAttribute('style','font-weight:bold;');
+			nameDiv.setAttribute('class','movieNameDiv');
 			descDiv = document.createElement('div');
 			descDiv.innerHTML = this.formatMovieDescription(movieDetails);
-			descDiv.setAttribute('style','height:40px; overflow:auto;color:#555555; font-size:8pt;');
+			descDiv.setAttribute('style','height:40px; color:#555555; font-size:8pt;');
+			descDiv.setAttribute('class','movieDescDiv');
 			holderDiv.appendChild(cover);
 			holderDiv.appendChild(nameDiv);
 			holderDiv.appendChild(descDiv);
@@ -173,7 +180,8 @@ function PopupRenderManager()
 			clickHandler = popupObject.PopupInteractionManager.getMovieRowClickHandler(backgroundPage.CONSTANTS.HOME_URL+movieObjects[i].watchURL);
 			tr.addEventListener('click',clickHandler);
 			tbody.appendChild(tr);
-		}   
+		} 
+		titleTable.style.opacity = 1.0;
 		titleTable.appendChild(tbody);
 	}
 	renderObject.formatMovieDescription = function(description)
@@ -191,13 +199,9 @@ function PopupRenderManager()
 	}
 	renderObject.removeLanguageControlBadge = function(language)
 	{
-		var button = document.getElementById(languageName.toLowerCase()+"Button");
-		button.parentNode.removeChild(button.parentNode.lastChild);
-		/*var titleTable = document.getElementById('movieTitles').firstChild;
-		for(i=0; i < titleTable.children.length; i++)
-		{
-			titleTable.children[i].removeAttribute('class');
-		}*/
+		var button = document.getElementById(language.toLowerCase()+"Button");
+		button.lastChild.style.top = '0';
+		button.lastChild.style.opacity = 0;
 	}
 	renderObject.renderSearchBar = function()
 	{
@@ -232,10 +236,10 @@ function PopupRenderManager()
 	}
 	renderObject.showProgressIndicator = function()
 	{
-		pi = document.getElementById('progressIndicatorDiv');
+		var pi = document.getElementById('progressIndicatorDiv');
 		if(pi)
 		{
-			pi.style.display = 'block';	
+			pi.style.display = 'block';
 		}
 	}
 	return renderObject;
@@ -246,8 +250,7 @@ function PopupInteractionManager()
 	var interactionObject = new Object();
 	interactionObject.languageControlClickHandler = function(control)
 	{
-		var language = control.innerText;
-		//getMoviesForLanguage(languageName);
+		var language = control.childNodes[0].nodeValue;
 		popupObject.PopupRenderManager.renderMoviesForLanguage(language);
 	}
 	interactionObject.getMovieRowClickHandler = function(url)
