@@ -6,22 +6,22 @@
  <!doctype html>
  <html>
  <head>
-  <link rel="stylesheet" type="text/css" href="css/bootstrap.css">
+  <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+  <link rel="stylesheet" type="text/css" href="css/monitorStylesheet.css">
   <title>Einthusan Monitor Preferences</title>
-  
 </head>
 <body>
-  <div style="margin-left: auto; margin-right: auto; width: 900px; border: 1px solid #666666; margin-top: 20px; height: auto; box-shadow: 0px 6px 20px #666666; border-radius: 4px; background-color:rgba(200,200,200,0.1); padding-bottom:20px;">
-    <div style='margin:20px;text-align: center;'>
-      <img style='width:60px;height:60px;' src='icon128.png'></img>
+  <div id='preferencesPageRootDiv'>
+    <div id='preferencesPageIcon'>
+      <img src='icon128.png'></img>
     </div>
 
-    <table style='margin-right:auto; margin-left:auto;'>
+    <table id="preferencesTable">
       <tr>
-        <td style='padding:5px;'>
+        <td>
           <label class="control-label">Default Language:</label>
         </td>
-        <td style='padding:5px;'>
+        <td>
           <div class="input-append controls" style = 'margin-left:20px;'>
             <div class="btn-group">
               <button id='selectedLanguage' class="btn dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
@@ -33,12 +33,12 @@
         </td>
       </tr>
       <tr>
-        <td style='padding:5px;'>
+        <td>
           <label class="control-label">Refresh Interval:</label>
         </td>
-        <td style='padding:5px;'>
+        <td>
           <div class="input-append controls" style = 'margin-left:20px;'>
-            <input class="span2" id="timeValue" type="text" style="width:70px;text-align:right;">
+            <input class="span2" id="timeValue" type="text">
             <div class="btn-group">
               <button id='selectedTimeUnit' class="btn dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
               <ul class="dropdown-menu">
@@ -52,12 +52,12 @@
         </td>
       </tr>
     </table>
-    <p id='lastUpdated' style='text-align:center;font-size:10px;'></p>
+    <p id='lastUpdated'></p>
   </div>
 </body>
 <footer>
   <script src="js/jquery-2.0.3.min.js"></script>
-  <script src="js/bootstrap.js"></script>
+  <script src="js/bootstrap.min.js"></script>
   <script src="options.js"></script>
 </footer>
 </html>

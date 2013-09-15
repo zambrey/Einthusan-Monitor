@@ -125,7 +125,7 @@ function PopupRenderManager()
 	{
 		badge = document.createElement('span');
 		badge.setAttribute('class','badge badge-warning');
-		badge.setAttribute('style','position:absolute; top:25px; opacity:1.0; -webkit-transition:top 1s ease-out, opacity 2s ease-out;');
+		badge.setAttribute('style','position:absolute; top:25px;');
 		badge.innerText = newMoviesNumber;	
 		control.appendChild(badge);
 	}
@@ -187,14 +187,12 @@ function PopupRenderManager()
 				td = document.createElement('td');
 				cover = document.createElement('img');
 				cover.setAttribute('src',backgroundPage.CONSTANTS.HOME_URL+movieCover);
-				cover.setAttribute('style','height:60px; float:left; margin-right:4px;');
+				cover.setAttribute('class','listMovieCover');
 				nameDiv = document.createElement('div');
 				nameDiv.innerHTML = movieTitle;
-				//nameDiv.setAttribute('style','font-weight:bold;');
 				nameDiv.setAttribute('class','movieNameDiv');
 				descDiv = document.createElement('div');
 				descDiv.innerHTML = this.formatMovieDescription(movieDetails);
-				descDiv.setAttribute('style','height:40px; color:#555555; font-size:8pt;');
 				descDiv.setAttribute('class','movieDescDiv');
 				holderDiv.appendChild(cover);
 				holderDiv.appendChild(nameDiv);
@@ -210,18 +208,17 @@ function PopupRenderManager()
 			{
 				var div = document.createElement('div');
 				div.setAttribute('title',movieTitle);
-				div.setAttribute('style','text-align:center;float:left; margin:2px; padding:6px;cursor:pointer;');
+				div.setAttribute('class','movieTile');
 				if(movieObjects[i].isNew)
 				{
 					div.style.backgroundColor = "#fcf8e3";
 				}
 				cover = document.createElement('img');
 				cover.setAttribute('src',backgroundPage.CONSTANTS.HOME_URL+movieCover);
-				cover.setAttribute('style','height:140px;margin:2px;');
+				cover.setAttribute('class','tileMovieCover');
 				nameDiv = document.createElement('div');
 				nameDiv.innerHTML = movieTitle;
-				nameDiv.setAttribute('style','overflow:hidden; height: 20px; width:100px; white-space:nowrap; text-overflow:ellipsis; text-align:center;');
-				nameDiv.setAttribute('class','movieNameDiv');
+				nameDiv.setAttribute('class','tileMovieNameDiv');
 				div.appendChild(cover);
 				div.appendChild(nameDiv);
 				clickHandler = popupObject.PopupInteractionManager.getMovieRowClickHandler(backgroundPage.CONSTANTS.HOME_URL+movieObjects[i].watchURL);
