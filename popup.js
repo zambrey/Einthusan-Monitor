@@ -283,13 +283,37 @@ function PopupRenderManager()
 			$("#toolsPanel").css('right','0');
 			$("#toolsPanel").css('opacity','1');
 			$("#toolsDiv").css('opacity','0');
-		})
+		});
 		$(".icon-remove").click(function()
 		{
 			$("#toolsPanel").css('right','-362px');
 			$("#toolsPanel").css('opacity','0');
 			$("#toolsDiv").css('opacity','0.7');
-		})
+		});
+		$(".icon-info-sign").click(function()
+		{
+			$(".icon-info-sign").toggleClass('icon-white');
+			if($("#infoPanel").css('opacity') == '0')
+			{
+				$("#infoPanel").css('opacity','1');
+				$("#infoPanel").css('left','0');	
+			}
+			else
+			{
+				$("#infoPanel").css('opacity','0');
+				$("#infoPanel").css('left','-362px');
+			}
+		});
+		$(".close").click(function()
+		{
+			$(".icon-info-sign").toggleClass('icon-white');
+			$("#infoPanel").css('opacity','0');
+			$("#infoPanel").css('left','-362px');
+		}); 
+		$("#feedback").click(function()
+		{
+			chrome.tabs.create({"url":$("#feedback").attr('href')},function(){});
+		});
 		$("#tileView").click(function()
 		{
 			popupObject.PopupRenderManager.viewStyle = backgroundPage.CONSTANTS.TILE_VIEW_STYLE;
