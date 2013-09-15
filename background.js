@@ -35,14 +35,18 @@ function constants()
 	//CONSTANT VALUES
 	object.HOME_URL = "http://www.einthusan.com/";
 	object.QUERY_PATH = "index.php?lang=";
-	
+	object.LIST_VIEW_STYLE = "listView";
+	object.TILE_VIEW_STYLE = "tileView";
+
 	//PREFERENCE RELATED CONSTANTS
 	object.DEF_LANG_PREF = "defaultLanguagePref";
 	object.REFRESH_TIME_VAL_PREF = "refreshTimeValPref";
 	object.REFRESH_TIME_UNIT_PREF = "refreshTimeUnitPref";
+	object.VIEW_STYLE_PREF = "viewStylePref";
 	object.DEFAULT_REFRESH_TIME_VALUE = "3";
 	object.DEFAULT_REFRESH_TIME_UNIT = "Hours";
-	
+	object.DEFAULT_VIEW_STYLE = object.LIST_VIEW_STYLE;
+
 	//EXTERNAL COMMUNICATION KEYS
 	object.LANGUAGES_REQUEST = "languageRequest";
 	object.MOVIES_REQUEST = "moviesRequest";
@@ -51,8 +55,6 @@ function constants()
 	object.RESET_NEW_FLAGS = "resetNewFlags";
 	object.INITIATE_AGAIN = "initiateAgain";
 	object.NEW_FLAGS_RESET_DONE = "newFlagsReset";
-
-	//NUMERICAL CONSTANT VALUES
 
 	return object;
 }
@@ -389,6 +391,7 @@ function PreferencesManager()
 	prefObject.DEFAULT_LANGUAGE_KEY = "defaultLanguage";
 	prefObject.REFRESH_TIME_VALUE_KEY = "refreshTimeVal";
 	prefObject.REFRESH_TIME_UNIT_KEY = "refreshTimeUnit";
+	prefObject.VIEW_STYLE_KEY = "viewStyle";
 	prefObject.getPreferenceValue = function(preferenceType)
 	{	
 		return localStorage.getItem(this.getLocalStorageKeyForPreferenceType(preferenceType));
@@ -411,6 +414,10 @@ function PreferencesManager()
 		else if(preferenceType == CONSTANTS.REFRESH_TIME_UNIT_PREF)
 		{
 			prefKey = this.REFRESH_TIME_UNIT_KEY;
+		}
+		else if(preferenceType == CONSTANTS.VIEW_STYLE_PREF)
+		{
+			prefKey = this.VIEW_STYLE_KEY;
 		}
 		return prefKey;
 	}

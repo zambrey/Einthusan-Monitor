@@ -3,7 +3,7 @@
  * Ameya Zambre
  * ameyazambre@gmail.com
  */
-var backgroundPage = null,
+var backgroundPage = chrome.extension.getBackgroundPage(),
 	popupObject = new PopupObject();
 
 {
@@ -37,13 +37,23 @@ function sendMessage(msgType, languageName)
 function PopupRenderManager()
 {
 	var renderObject = new Object();
+	renderObject.viewStyle = backgroundPage.backgroundObject.PreferencesManager.getPreferenceValue(backgroundPage.CONSTANTS.VIEW_STYLE_PREF);
+	if(!renderObject.viewStyle)
+	{
+		renderObject.viewStyle = backgroundPage.CONSTANTS.DEFAULT_VIEW_STYLE;
+		backgroundPage.backgroundObject.PreferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.VIEW_STYLE_PREF, backgroundPage.CONSTANTS.DEFAULT_VIEW_STYLE);
+	}
+	renderObject.selectedLanguage = null;
 	renderObject.initRender = function()
 	{
 		if(chrome.extension.getBackgroundPage().isDataReady)
 		{
 			var startLang, languages;
 			popupObject.PopupRenderManager.hideProgressIndicator();
-			backgroundPage = chrome.extension.getBackgroundPage();
+			if(!backgroundPage)
+			{
+				backgroundPage = chrome.extension.getBackgroundPage();	
+			}
 			languages = backgroundPage.backgroundObject.ContentManager.getLanguagesData();
 			popupObject.PopupRenderManager.renderLanguageControls(languages);
 			startLang = backgroundPage.backgroundObject.PreferencesManager.getPreferenceValue(backgroundPage.CONSTANTS.DEF_LANG_PREF);
@@ -53,6 +63,7 @@ function PopupRenderManager()
 				backgroundPage.backgroundObject.PreferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.DEF_LANG_PREF, startLang);
 			}
 			popupObject.PopupRenderManager.renderMoviesForLanguage(startLang);
+			popupObject.PopupRenderManager.renderToolsBar();
 		}
 		else
 		{
@@ -120,69 +131,114 @@ function PopupRenderManager()
 	}
 	renderObject.renderMoviesForLanguage = function(language)
 	{
+		popupObject.PopupRenderManager.selectedLanguage = language;
 		var languages = backgroundPage.backgroundObject.ContentManager.getLanguagesData();
 		popupObject.PopupRenderManager.renderSelectedLanguageControl(language);
 		var index = languages.indexOf(language),
 			movieList = backgroundPage.backgroundObject.ContentManager.getMoviesData(language);
-		this.renderMoviesTable(movieList);
-		backgroundPage.backgroundObject.CookieManager.setCookie(language.toLowerCase(),movieList);
-		if(backgroundPage.newMoviesCnt[index]>0)
-		{	
-			sendMessage(backgroundPage.CONSTANTS.RESET_NEW_FLAGS, language);
+		if(popupObject.PopupRenderManager.viewStyle == backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
+		{
+			document.getElementById('movieTitlesList').style.opacity = 0.0;
 		}
+		else
+		{
+			document.getElementById('movieTitlesTiles').style.opacity = 0.0;
+		}
+		setTimeout(function(){popupObject.PopupRenderManager.renderMoviesTable(language, movieList);},250);
 	}
-	renderObject.renderMoviesTable = function(movieObjects)
+	renderObject.renderMoviesTable = function(language, movieObjects)
 	{
-		var titleTable = document.getElementById('movieTitles'),
+		var titleTable,// = document.getElementById('movieTitles'),
+			unusedDOM,
 			tbody = document.createElement('tbody'),
 			movieTitle,
 			movieCover,
 			tr,
 			td,
-			indexTd,
 			coverTd,
 			cover,
 			nameDiv,
 			clickHandler;
+		if(popupObject.PopupRenderManager.viewStyle == backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
+		{
+			titleTable = document.getElementById('movieTitlesList');
+			unusedDOM = document.getElementById('movieTitlesTiles');
+		}
+		else
+		{
+			titleTable = document.getElementById('movieTitlesTiles');
+			unusedDOM = document.getElementById('movieTitlesList');
+		}
 		titleTable.innerHTML = '';  //Removing all other names
-		titleTable.style.opacity = 0.0;
+		unusedDOM.innerHTML = "";
 		for(i=0; i<movieObjects.length; i++)
 		{
 			movieTitle = movieObjects[i].movieTitle;
 			movieCover = movieObjects[i].movieCover;
 			movieDetails = movieObjects[i].movieDetails;
-			tr = document.createElement('tr');
-			if(movieObjects[i].isNew)
+			if(popupObject.PopupRenderManager.viewStyle == backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
 			{
-				tr.setAttribute('class','warning');
+				tr = document.createElement('tr');
+				if(movieObjects[i].isNew)
+				{
+					tr.setAttribute('class','warning');
+				}
+				var holderDiv = document.createElement('div');
+				td = document.createElement('td');
+				cover = document.createElement('img');
+				cover.setAttribute('src',backgroundPage.CONSTANTS.HOME_URL+movieCover);
+				cover.setAttribute('style','height:60px; float:left; margin-right:4px;');
+				nameDiv = document.createElement('div');
+				nameDiv.innerHTML = movieTitle;
+				//nameDiv.setAttribute('style','font-weight:bold;');
+				nameDiv.setAttribute('class','movieNameDiv');
+				descDiv = document.createElement('div');
+				descDiv.innerHTML = this.formatMovieDescription(movieDetails);
+				descDiv.setAttribute('style','height:40px; color:#555555; font-size:8pt;');
+				descDiv.setAttribute('class','movieDescDiv');
+				holderDiv.appendChild(cover);
+				holderDiv.appendChild(nameDiv);
+				holderDiv.appendChild(descDiv);
+				td.appendChild(holderDiv);
+				tr.appendChild(td);
+				tr.style.cursor = 'pointer';
+				clickHandler = popupObject.PopupInteractionManager.getMovieRowClickHandler(backgroundPage.CONSTANTS.HOME_URL+movieObjects[i].watchURL);
+				tr.addEventListener('click',clickHandler);
+				tbody.appendChild(tr);	
 			}
-			var holderDiv = document.createElement('div');
-			td = document.createElement('td');
-			cover = document.createElement('img');
-			cover.setAttribute('src',backgroundPage.CONSTANTS.HOME_URL+movieCover);
-			cover.setAttribute('style','height:60px; float:left; margin-right:4px;');
-			nameDiv = document.createElement('div');
-			nameDiv.innerHTML = movieTitle;
-			nameDiv.setAttribute('style','font-weight:bold;');
-			nameDiv.setAttribute('class','movieNameDiv');
-			descDiv = document.createElement('div');
-			descDiv.innerHTML = this.formatMovieDescription(movieDetails);
-			descDiv.setAttribute('style','height:40px; color:#555555; font-size:8pt;');
-			descDiv.setAttribute('class','movieDescDiv');
-			holderDiv.appendChild(cover);
-			holderDiv.appendChild(nameDiv);
-			holderDiv.appendChild(descDiv);
-			
-			td.appendChild(holderDiv);
-			tr.appendChild(td);
-			
-			tr.style.cursor = 'pointer';
-			clickHandler = popupObject.PopupInteractionManager.getMovieRowClickHandler(backgroundPage.CONSTANTS.HOME_URL+movieObjects[i].watchURL);
-			tr.addEventListener('click',clickHandler);
-			tbody.appendChild(tr);
+			else
+			{
+				var div = document.createElement('div');
+				div.setAttribute('title',movieTitle);
+				div.setAttribute('style','text-align:center;float:left; margin:2px; padding:6px;cursor:pointer;');
+				if(movieObjects[i].isNew)
+				{
+					div.style.backgroundColor = "#fcf8e3";
+				}
+				cover = document.createElement('img');
+				cover.setAttribute('src',backgroundPage.CONSTANTS.HOME_URL+movieCover);
+				cover.setAttribute('style','height:140px;margin:2px;');
+				nameDiv = document.createElement('div');
+				nameDiv.innerHTML = movieTitle;
+				nameDiv.setAttribute('style','overflow:hidden; height: 20px; width:100px; white-space:nowrap; text-overflow:ellipsis; text-align:center;');
+				nameDiv.setAttribute('class','movieNameDiv');
+				div.appendChild(cover);
+				div.appendChild(nameDiv);
+				clickHandler = popupObject.PopupInteractionManager.getMovieRowClickHandler(backgroundPage.CONSTANTS.HOME_URL+movieObjects[i].watchURL);
+				div.addEventListener('click',clickHandler);
+				titleTable.appendChild(div);
+			}
 		} 
 		titleTable.style.opacity = 1.0;
-		titleTable.appendChild(tbody);
+		if(popupObject.PopupRenderManager.viewStyle == backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
+		{
+			titleTable.appendChild(tbody);
+		}	
+		backgroundPage.backgroundObject.CookieManager.setCookie(language.toLowerCase(),movieObjects);
+		if(backgroundPage.newMoviesCnt[backgroundPage.backgroundObject.ContentManager.getLanguageIndex(language)]>0)
+		{	
+			sendMessage(backgroundPage.CONSTANTS.RESET_NEW_FLAGS, language);
+		}
 	}
 	renderObject.formatMovieDescription = function(description)
 	{
@@ -200,7 +256,7 @@ function PopupRenderManager()
 	renderObject.removeLanguageControlBadge = function(language)
 	{
 		var button = document.getElementById(language.toLowerCase()+"Button");
-		button.lastChild.style.top = '0';
+		button.lastChild.style.top = '0px';
 		button.lastChild.style.opacity = 0;
 	}
 	renderObject.renderSearchBar = function()
@@ -224,7 +280,31 @@ function PopupRenderManager()
 	}
 	renderObject.renderToolsBar = function()
 	{
-		/*Implement later*/
+		$("#toolsDiv").click(function()
+		{
+			//$("#toolsPanel").css('display','block');
+			$("#toolsPanel").css('right','0');
+			$("#toolsPanel").css('opacity','1');
+			$("#toolsDiv").css('opacity','0');
+		})
+		$(".icon-remove").click(function()
+		{
+			$("#toolsPanel").css('right','-362px');
+			$("#toolsPanel").css('opacity','0');
+			$("#toolsDiv").css('opacity','0.7');
+		})
+		$("#tileView").click(function()
+		{
+			popupObject.PopupRenderManager.viewStyle = backgroundPage.CONSTANTS.TILE_VIEW_STYLE;
+			backgroundPage.backgroundObject.PreferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.VIEW_STYLE_PREF, backgroundPage.CONSTANTS.TILE_VIEW_STYLE);
+			popupObject.PopupRenderManager.renderMoviesForLanguage(popupObject.PopupRenderManager.selectedLanguage);
+		})
+		$("#listView").click(function()
+		{
+			popupObject.PopupRenderManager.viewStyle = backgroundPage.CONSTANTS.LIST_VIEW_STYLE;
+			backgroundPage.backgroundObject.PreferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.VIEW_STYLE_PREF, backgroundPage.CONSTANTS.LIST_VIEW_STYLE);
+			popupObject.PopupRenderManager.renderMoviesForLanguage(popupObject.PopupRenderManager.selectedLanguage);	
+		})
 	}
 	renderObject.hideProgressIndicator = function()
 	{
@@ -259,6 +339,10 @@ function PopupInteractionManager()
 		{
 			chrome.tabs.create({"url":url},function(){});
 		}
+	}
+	interactionObject.viewTypeSelectionHandler = function()
+	{
+
 	}
 	return interactionObject;
 }

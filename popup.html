@@ -12,9 +12,7 @@
       body 
       {
         min-width: 357px;
-        /*width: 435px;*/
-        overflow-x: hidden;
-        overflow-y: hidden; 
+        overflow: hidden;
       }
 
       .movieDescDiv::-webkit-scrollbar 
@@ -45,7 +43,7 @@
 
       .movieNameDiv
       {
-        
+
       }
     </style>
     <script src="popup.js"></script>
@@ -67,16 +65,21 @@
       </form>
       <i class='icon-remove icon-white' style='display:none;position:absolute; left:4px; top:12px;'></i>
     </div> -->
-    <div id='languageButtons' class='' style='opacity:0; margin-top:2px;margin-bottom:5px;text-align:center;-webkit-transition:opacity 0.5s ease-out;'>
+    <div id='languageButtons' class='' style='opacity:0; margin-top:2px;margin-bottom:5px;text-align:center;-webkit-transition:opacity 0.25s ease-out;'>
     </div>
-    <table id='movieTitles' class='table table-hover' style='opacity:0; margin-bottom:0;-webkit-transition:opacity 0.5s ease-out;'>
+    <table id='movieTitlesList' class='table table-hover' style='opacity:0;margin-bottom:0;-webkit-transition: opacity 0.25s ease-out;'>
     </table>
-    <!-- <div id='toolsDiv' style="position:absolute; bottom:0; width:100%; display:block;">
-      <i class='icon-search' style='display:block;position:absolute; left:4px; top:12px;'></i>
-    </div> -->
-    <!-- <div class="btn-group" style='text-align:center;width:100%;'>
-      <button class="btn"><i class='icon-th'></i></button>
-      <button class="btn"><i class='icon icon-th-list'></i></button>
-    </div> -->
+    <div id='movieTitlesTiles' style='opacity:0; -webkit-transition: opacity 0.25s ease-out;'>
+    </div>
+    <div id='toolsDiv' style="position:absolute; opacity:0.7; bottom:0; right:0; display:block;-webkit-transition: opacity 0.25s ease-out;">
+      <span class="label label-important"><i class='icon-cog icon-white'></i></span>
+    </div>
+    <div id='toolsPanel' style='text-align:right;background:rgba(128,0,0,1);width:100%; position:absolute; opacity:0; right:-362px;bottom:0px;padding:2px;-webkit-transition:right 0.25s ease-out, opacity 0.25s ease-out;;'>
+      <div class="btn-group" >
+        <button class="btn" id='tileView'><i class='icon-th'></i></button>
+        <button class="btn" id='listView'><i class='icon icon-th-list'></i></button>
+      </div>
+      <i class='icon-remove icon-white' style='margin-right:2px;'></i>
+    </div>
   </body>
 </html>
