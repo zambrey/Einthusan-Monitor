@@ -33,26 +33,33 @@ table#movieTitlesList, div#movieTitlesTiles
   -webkit-transition: opacity 0.25s ease-out;
 }
 
-div#toolsDiv
+.icon-cog
 {
   position:absolute; 
-  opacity:0.7; 
+  opacity:1.0; 
   bottom:0; 
   right:0; 
   display:block;
-  -webkit-transition: opacity 0.25s ease-out;
+  -webkit-transition: opacity 0.15s ease-out;
+}
+
+.icon-search
+{
+  position:absolute; 
+  opacity:1.0; 
+  display:block;
+  -webkit-transition: opacity 0.15s ease-out;
 }
 
 div#toolsPanel
 {
-  text-align:right;
+  /*text-align:right;*/
   background:rgba(128,0,0,1);
   width:100%; 
   position:absolute; 
   opacity:0;
-  bottom:0px;
   padding:2px;
-  -webkit-transition:right 0.25s ease-out, opacity 0.25s ease-out;
+  -webkit-transition:top 0.25s ease-out, opacity 0.25s ease-out;
 }
 
 .badge

@@ -64,6 +64,7 @@ function PopupRenderManager()
 			}
 			popupObject.PopupRenderManager.renderMoviesForLanguage(startLang);
 			popupObject.PopupRenderManager.renderToolsBar();
+			popupObject.PopupRenderManager.renderSearchBar();
 		}
 		else
 		{
@@ -258,37 +259,86 @@ function PopupRenderManager()
 	}
 	renderObject.renderSearchBar = function()
 	{
-		/*Not using this yet*/
-		$(".icon-search").click(function(){
-			if($(".icon-search").css('display')=='block')
-			{
-				$(".icon-search").css('display','none'); 
-				$('.icon-remove').css('display','block');
-				$('.form-search').css('display','block');	
-				$('#searchDiv').css({'background-color':'#800000','height':'38px'});
-			}
-			$(".icon-remove").click(function(){
-				$(".icon-search").css('display','block'); 
-				$('.icon-remove').css('display','none');
-				$('.form-search').css('display','none');
-				$('#searchDiv').css({'background-color':'none','height':'0'});		
-			})
-		});
+		popupObject.PopupInteractionManager.setTopBarInteraction();
 	}
 	renderObject.renderToolsBar = function()
 	{
-		$("#toolsDiv").click(function()
+		popupObject.PopupInteractionManager.setBottomBarInteraction();
+	}
+	renderObject.hideProgressIndicator = function()
+	{
+		var pi = document.getElementById('progressIndicatorDiv');
+		if(pi)
 		{
-			//$("#toolsPanel").css('display','block');
-			$("#toolsPanel").css('right','0');
-			$("#toolsPanel").css('opacity','1');
-			$("#toolsDiv").css('opacity','0');
+			pi.style.display = 'none';	
+		}
+	}
+	renderObject.showProgressIndicator = function()
+	{
+		var pi = document.getElementById('progressIndicatorDiv');
+		if(pi)
+		{
+			pi.style.display = 'block';
+		}
+	}
+	return renderObject;
+}
+
+function PopupInteractionManager()
+{
+	var interactionObject = new Object();
+	interactionObject.languageControlClickHandler = function(control)
+	{
+		var language = control.childNodes[0].nodeValue;
+		popupObject.PopupRenderManager.renderMoviesForLanguage(language);
+	}
+	interactionObject.getMovieRowClickHandler = function(url)
+	{
+		return function()
+		{
+			chrome.tabs.create({"url":url},function(){});
+		}
+	}
+	interactionObject.setTopBarInteraction = function()
+	{
+		$(".icon-search").click(function(){
+			$('#searchDiv').css('top','0');
+			$('#searchDiv').css('opacity','1');
+			$("#searchTerm").val("Search "+popupObject.PopupRenderManager.selectedLanguage+" Movies");
+			$("#searchLang").val(popupObject.PopupRenderManager.selectedLanguage);
+			$("#searchTerm").css('color','#BBBBBB');
+			$(".icon-search").css('opacity','0');
 		});
-		$(".icon-remove").click(function()
+		$("#removeTopBar").click(function(){
+			$('#searchDiv').css('top','-36px');
+			$('#searchDiv').css('opacity','0');
+			$('.icon-search').css('opacity','1');
+		});
+		$("#searchTerm").focus(function(){
+			$("#searchTerm").val("");
+			$("#searchTerm").css('color','#000000');
+		});
+		$("#searchTerm").blur(function(){
+			$("#searchTerm").css('color','#BBBBBB');
+			if($("#searchTerm").val() == "")
+			{
+				$("#searchTerm").val("Search "+popupObject.PopupRenderManager.selectedLanguage+" Movies")
+			}
+		});
+	}
+	interactionObject.setBottomBarInteraction = function()
+	{
+		$(".icon-cog").click(function()
 		{
-			$("#toolsPanel").css('right','-362px');
+			$("#toolsPanel").css('top','0');
+			$("#toolsPanel").css('opacity','1');
+			$(".icon-cog").css('opacity','0');
+		});
+		$("#removeBottomBar").click(function()
+		{
+			$("#toolsPanel").css('top','-36px');
 			$("#toolsPanel").css('opacity','0');
-			$("#toolsDiv").css('opacity','0.7');
+			$(".icon-cog").css('opacity','1');
 		});
 		$(".icon-info-sign").click(function()
 		{
@@ -326,44 +376,6 @@ function PopupRenderManager()
 			backgroundPage.backgroundObject.PreferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.VIEW_STYLE_PREF, backgroundPage.CONSTANTS.LIST_VIEW_STYLE);
 			popupObject.PopupRenderManager.renderMoviesForLanguage(popupObject.PopupRenderManager.selectedLanguage);	
 		})
-	}
-	renderObject.hideProgressIndicator = function()
-	{
-		var pi = document.getElementById('progressIndicatorDiv');
-		if(pi)
-		{
-			pi.style.display = 'none';	
-		}
-	}
-	renderObject.showProgressIndicator = function()
-	{
-		var pi = document.getElementById('progressIndicatorDiv');
-		if(pi)
-		{
-			pi.style.display = 'block';
-		}
-	}
-	return renderObject;
-}
-
-function PopupInteractionManager()
-{
-	var interactionObject = new Object();
-	interactionObject.languageControlClickHandler = function(control)
-	{
-		var language = control.childNodes[0].nodeValue;
-		popupObject.PopupRenderManager.renderMoviesForLanguage(language);
-	}
-	interactionObject.getMovieRowClickHandler = function(url)
-	{
-		return function()
-		{
-			chrome.tabs.create({"url":url},function(){});
-		}
-	}
-	interactionObject.viewTypeSelectionHandler = function()
-	{
-
 	}
 	return interactionObject;
 }
