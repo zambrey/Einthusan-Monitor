@@ -17,15 +17,15 @@
         <div class="bar" style="width:100%;"></div>
       </div>
     </div>
-    <i class='icon-search' style='position:absolute; left:2px; top:12px;'></i>
-    <i class='icon-cog' style='position:absolute; right:2px; top:12px;'></i>
+    <i class='icon-search' style='position:absolute; left:2px; top:14px;'></i>
+    <i class='icon-cog' style='position:absolute; right:2px; top:14px;'></i>
     <div id='searchDiv' style="background:rgba(128,0,0,1); position:absolute; width:100%; top:-36px; opacity:0; -webkit-transition:top 0.25s ease-out, opacity 0.25s ease-out;">
       <i id="removeTopBar" class='icon-remove icon-white' style='float:left; margin-left:2px; margin-top:12px; margin-right:2px;'></i>
-      <form id="searchForm" class="form-search" action="http://www.einthusan.com/webservice/filters.php" method="post" style='left:22px; top:4px; margin-top:4px; margin-bottom:4px; margin-left:2px; margin-right:2px;'>
+      <form id="searchForm" enctype="" class="form-search" action="" method="" style='left:22px; top:4px; margin-top:4px; margin-bottom:4px; margin-left:2px; margin-right:2px;'>
         <div class="input-append">
-          <input id="searchTerm" type="text" class="span2 search-query" style="width:230px;">
-          <input id="searchLang" type="hidden" value="hindi">
-          <button id="submitSearch" type="submit" class="btn">Search</button>
+          <input id="searchTerm" name="search" type="text" class="span2 search-query" style="width:230px;">
+          <input id="searchLang" name="lang" type="hidden">
+          <button id="submitSearch" class="btn">Search</button>
         </div>
       </form>
     </div>

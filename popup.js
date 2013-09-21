@@ -145,98 +145,109 @@ function PopupRenderManager()
 		{
 			document.getElementById('movieTitlesTiles').style.opacity = 0.0;
 		}
-		setTimeout(function(){popupObject.PopupRenderManager.renderMoviesTable(language, movieList);},250);
+		setTimeout(function(){popupObject.PopupRenderManager.renderMoviesTable(movieList, language);},250);
 	}
-	renderObject.renderMoviesTable = function(language, movieObjects)
+	renderObject.renderMoviesTable = function(movieObjects, language)
 	{
-		var titleTable,// = document.getElementById('movieTitles'),
+		var titleTable,
+			usedDOM,
 			unusedDOM,
-			tbody = document.createElement('tbody'),
 			movieTitle,
 			movieCover,
-			tr,
-			td,
-			coverTd,
-			cover,
-			nameDiv,
-			clickHandler;
+			movieDetails;
 		if(popupObject.PopupRenderManager.viewStyle == backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
 		{
 			titleTable = document.getElementById('movieTitlesList');
+			titleTable.appendChild(document.createElement('tbody'));
+			usedDOM = titleTable.children[0];
 			unusedDOM = document.getElementById('movieTitlesTiles');
 		}
 		else
 		{
 			titleTable = document.getElementById('movieTitlesTiles');
+			usedDOM = titleTable;
 			unusedDOM = document.getElementById('movieTitlesList');
 		}
-		titleTable.innerHTML = '';  //Removing all other names
+		usedDOM.innerHTML = "";  //Removing all other names
 		unusedDOM.innerHTML = "";
 		for(i=0; i<movieObjects.length; i++)
 		{
 			movieTitle = movieObjects[i].movieTitle;
 			movieCover = movieObjects[i].movieCover;
 			movieDetails = movieObjects[i].movieDetails;
-			if(popupObject.PopupRenderManager.viewStyle == backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
-			{
-				tr = document.createElement('tr');
-				if(movieObjects[i].isNew)
-				{
-					tr.setAttribute('class','warning');
-				}
-				var holderDiv = document.createElement('div');
-				td = document.createElement('td');
-				cover = document.createElement('img');
-				cover.setAttribute('src',backgroundPage.CONSTANTS.HOME_URL+movieCover);
-				cover.setAttribute('class','listMovieCover');
-				nameDiv = document.createElement('div');
-				nameDiv.innerHTML = movieTitle;
-				nameDiv.setAttribute('class','movieNameDiv');
-				descDiv = document.createElement('div');
-				descDiv.innerHTML = this.formatMovieDescription(movieDetails);
-				descDiv.setAttribute('class','movieDescDiv');
-				holderDiv.appendChild(cover);
-				holderDiv.appendChild(nameDiv);
-				holderDiv.appendChild(descDiv);
-				td.appendChild(holderDiv);
-				tr.appendChild(td);
-				tr.style.cursor = 'pointer';
-				clickHandler = popupObject.PopupInteractionManager.getMovieRowClickHandler(backgroundPage.CONSTANTS.HOME_URL+movieObjects[i].watchURL);
-				tr.addEventListener('click',clickHandler);
-				tbody.appendChild(tr);	
-			}
-			else
-			{
-				var div = document.createElement('div');
-				div.setAttribute('title',movieTitle);
-				div.setAttribute('class','movieTile');
-				if(movieObjects[i].isNew)
-				{
-					div.style.backgroundColor = "#fcf8e3";
-				}
-				cover = document.createElement('img');
-				cover.setAttribute('src',backgroundPage.CONSTANTS.HOME_URL+movieCover);
-				cover.setAttribute('class','tileMovieCover');
-				nameDiv = document.createElement('div');
-				nameDiv.innerHTML = movieTitle;
-				nameDiv.setAttribute('class','tileMovieNameDiv');
-				div.appendChild(cover);
-				div.appendChild(nameDiv);
-				clickHandler = popupObject.PopupInteractionManager.getMovieRowClickHandler(backgroundPage.CONSTANTS.HOME_URL+movieObjects[i].watchURL);
-				div.addEventListener('click',clickHandler);
-				titleTable.appendChild(div);
-			}
+			usedDOM.appendChild(this.createMovieItem(movieTitle, movieObjects[i].isNew, movieCover, movieObjects[i].watchURL, movieDetails));
 		} 
 		titleTable.style.opacity = 1.0;
+		if(language)
+		{
+			backgroundPage.backgroundObject.CookieManager.setCookie(language.toLowerCase(),movieObjects);
+			if(backgroundPage.newMoviesCnt[backgroundPage.backgroundObject.ContentManager.getLanguageIndex(language)]>0)
+			{	
+				sendMessage(backgroundPage.CONSTANTS.RESET_NEW_FLAGS, language);
+			}	
+		}
+	}
+	renderObject.createMovieItem = function(movieTitle, isNew, movieCover, watchURL, movieDetails)
+	{
+		var item;
 		if(popupObject.PopupRenderManager.viewStyle == backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
 		{
-			titleTable.appendChild(tbody);
-		}	
-		backgroundPage.backgroundObject.CookieManager.setCookie(language.toLowerCase(),movieObjects);
-		if(backgroundPage.newMoviesCnt[backgroundPage.backgroundObject.ContentManager.getLanguageIndex(language)]>0)
-		{	
-			sendMessage(backgroundPage.CONSTANTS.RESET_NEW_FLAGS, language);
+			item = this.createMovieListItem(movieTitle, isNew, movieCover, watchURL, movieDetails);
 		}
+		else
+		{
+			item = this.createMovieTile(movieTitle, isNew, movieCover, watchURL);
+		}
+		return item;
+	}
+	renderObject.createMovieTile = function(movieTitle, isNew, movieCover, watchURL)
+	{
+		var div = document.createElement('div');
+		div.setAttribute('title',movieTitle);
+		div.setAttribute('class','movieTile');
+		if(isNew)
+		{
+			div.style.backgroundColor = "#fcf8e3";
+		}
+		cover = document.createElement('img');
+		cover.setAttribute('src',backgroundPage.CONSTANTS.HOME_URL+movieCover);
+		cover.setAttribute('class','tileMovieCover');
+		nameDiv = document.createElement('div');
+		nameDiv.innerHTML = movieTitle;
+		nameDiv.setAttribute('class','tileMovieNameDiv');
+		div.appendChild(cover);
+		div.appendChild(nameDiv);
+		clickHandler = popupObject.PopupInteractionManager.getMovieRowClickHandler(backgroundPage.CONSTANTS.HOME_URL+watchURL);
+		div.addEventListener('click',clickHandler);
+		return div;
+	}
+	renderObject.createMovieListItem = function(movieTitle, isNew, movieCover, watchURL, movieDetails)
+	{
+		var tr = document.createElement('tr');
+		if(isNew)
+		{
+			tr.setAttribute('class','warning');
+		}
+		var holderDiv = document.createElement('div');
+		td = document.createElement('td');
+		cover = document.createElement('img');
+		cover.setAttribute('src',backgroundPage.CONSTANTS.HOME_URL+movieCover);
+		cover.setAttribute('class','listMovieCover');
+		nameDiv = document.createElement('div');
+		nameDiv.innerHTML = movieTitle;
+		nameDiv.setAttribute('class','movieNameDiv');
+		descDiv = document.createElement('div');
+		descDiv.innerHTML = this.formatMovieDescription(movieDetails);
+		descDiv.setAttribute('class','movieDescDiv');
+		holderDiv.appendChild(cover);
+		holderDiv.appendChild(nameDiv);
+		holderDiv.appendChild(descDiv);
+		td.appendChild(holderDiv);
+		tr.appendChild(td);
+		tr.style.cursor = 'pointer';
+		clickHandler = popupObject.PopupInteractionManager.getMovieRowClickHandler(backgroundPage.CONSTANTS.HOME_URL+watchURL);
+		tr.addEventListener('click',clickHandler);
+		return tr;
 	}
 	renderObject.formatMovieDescription = function(description)
 	{
@@ -305,7 +316,7 @@ function PopupInteractionManager()
 			$('#searchDiv').css('top','0');
 			$('#searchDiv').css('opacity','1');
 			$("#searchTerm").val("Search "+popupObject.PopupRenderManager.selectedLanguage+" Movies");
-			$("#searchLang").val(popupObject.PopupRenderManager.selectedLanguage);
+			$("#searchLang").val(popupObject.PopupRenderManager.selectedLanguage.toLowerCase());
 			$("#searchTerm").css('color','#BBBBBB');
 			$(".icon-search").css('opacity','0');
 		});
@@ -325,6 +336,19 @@ function PopupInteractionManager()
 				$("#searchTerm").val("Search "+popupObject.PopupRenderManager.selectedLanguage+" Movies")
 			}
 		});
+		$("#submitSearch").click(function(){
+			$("#searchForm").submit( function () {    
+              $.post(
+               'http://www.einthusan.com/webservice/filters.php',
+                $(this).serialize(),
+                function(data){
+                  populateSearchResults(jQuery.parseJSON(data));
+                }
+              );
+              return false;   
+            });
+		});
+		
 	}
 	interactionObject.setBottomBarInteraction = function()
 	{
@@ -378,4 +402,33 @@ function PopupInteractionManager()
 		})
 	}
 	return interactionObject;
+}
+
+function populateSearchResults(data)
+{
+	//alert(data);
+	if(data.found > 0)
+	{
+		resultCountOnPage = Math.min(data.results_per_page, data.found);
+		for(i=0; i<resultCountOnPage; i++)
+		{
+			console.log(data.results[i]);
+			//Get the data using movie id here
+			//e.g. http://www.einthusan.com/webservice/movie.php?id=1236
+			//Populate some array with MovieObjects
+			//Try to use same render function as above
+		}
+		if(data.max_page > 1)
+		{
+			//Save max_page and currentPage# value
+			//send POST requests with page parameter
+			//Do same this as above for the results there
+			//Do lazy load i.e. fetch next page data only if asked
+		}
+	}
+	else
+	{
+		//show No movies found message
+		console.log("No movies found.");
+	}
 }
