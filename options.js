@@ -1,6 +1,7 @@
 /*
  * Author
  * Ameya Zambre
+ * ameyazambre@gmail.com
  */
 var backgroundPage = chrome.extension.getBackgroundPage(),
 	defaultLang = backgroundPage.backgroundObject.PreferencesManager.getPreferenceValue(backgroundPage.CONSTANTS.DEF_LANG_PREF),

@@ -1,6 +1,6 @@
 body 
 {
-  min-width: 357px;
+  width:360px;
   overflow: hidden;
   font-family: 'Open Sans', sans-serif;
 }
@@ -31,6 +31,38 @@ table#movieTitlesList, div#movieTitlesTiles
   opacity:0;
   margin-bottom:0;
   -webkit-transition: opacity 0.25s ease-out;
+  max-height:540px;
+  max-width: 360px;
+  overflow-y:auto;
+  overflow-x:hidden;
+}
+
+table#movieTitlesList>tbody
+{
+  max-height:540px;
+  max-width: 360px;
+  display: block;
+  overflow-y: auto;
+  overflow-x:hidden;
+}
+
+table#movieTitlesList>tbody::-webkit-scrollbar, div#movieTitlesTiles::-webkit-scrollbar
+{ 
+  width: 6px;
+
+}
+
+table#movieTitlesList>tbody::-webkit-scrollbar-track, div#movieTitlesTiles::-webkit-scrollbar-track
+{
+  -webkit-box-shadow: inset 0 0 4px rgba(120,120,120,1); 
+  border-radius: 4px;
+}
+
+table#movieTitlesList>tbody::-webkit-scrollbar-thumb, div#movieTitlesTiles::-webkit-scrollbar-thumb
+{
+  background: rgba(0,0,0,1); 
+  border-radius: 4px;
+  -webkit-box-shadow: inset 0 0 8px rgba(255,255,255,1); 
 }
 
 .icon-cog
@@ -53,7 +85,6 @@ table#movieTitlesList, div#movieTitlesTiles
 
 div#toolsPanel
 {
-  /*text-align:right;*/
   background:rgba(128,0,0,1);
   width:100%; 
   position:absolute; 
@@ -70,7 +101,8 @@ div#toolsPanel
 
 .listMovieCover
 {
-  height:60px; 
+  height:60px;
+  width:42px;
   float:left; 
   margin-right:4px;
 }
@@ -78,6 +110,7 @@ div#toolsPanel
 .tileMovieCover
 {
   height:140px;
+  width:98px;
   margin:2px;
 }
 
@@ -109,24 +142,27 @@ div#toolsPanel
 .movieDescDiv
 {
   height:40px; 
+  max-width:298px;
   color:#555555; 
   font-size:8pt;
 }
 
 .movieDescDiv::-webkit-scrollbar 
 {
-  width: 8px;
+  width: 6px;
 }
 
 .movieDescDiv::-webkit-scrollbar-track 
 {
   -webkit-box-shadow: inset 0 0 4px rgba(120,120,120,1); 
+  border-radius: 8px;
 }
 
 .movieDescDiv::-webkit-scrollbar-thumb 
 {
   background: rgba(128,0,0,1); 
   -webkit-box-shadow: inset 0 0 8px rgba(255,255,255,1); 
+  border-radius: 8px;
 }
 
 .movieDescDiv
@@ -187,4 +223,86 @@ p#lastUpdated
 {
   text-align:center;
   font-size:10px;
+}
+
+div#searchDiv
+{
+  background:rgba(128,0,0,1); 
+  position:absolute; 
+  width:100%; 
+  top:-36px; 
+  opacity:0; 
+  -webkit-transition:top 0.25s ease-out, opacity 0.25s ease-out;
+}
+
+.icon-cog 
+{
+  position:absolute; 
+  right:2px; 
+  top:14px;
+}
+.icon-search
+{
+  position:absolute; 
+  left:2px; 
+  top:14px;
+}
+
+#removeTopBar
+{
+  float:left; 
+  margin-left:2px; 
+  margin-top:12px; 
+  margin-right:2px;
+}
+
+#removeBottomBar
+{
+  float:right;
+  margin-right:4px; 
+  margin-left:2px;
+  margin-top:10px;
+}
+
+#searchForm
+{
+  left:22px; 
+  top:4px; 
+  margin-top:4px; 
+  margin-bottom:4px; 
+  margin-left:2px; 
+  margin-right:2px;
+}
+
+.icon-info-sign
+{
+  float:right; 
+  margin-left:2px;
+  margin-top:10px;
+  margin-right:2px;
+}
+
+#infoPanel
+{
+  opacity:0;
+  position:absolute; 
+  top:42px; 
+  width:309px; 
+  height:auto; 
+  overflow-y:auto; 
+  left:-362px;
+  -webkit-transition:left 0.25s ease-out, opacity 0.25s ease-out;
+}
+
+#alertBox
+{
+  pointer-events:none; 
+  opacity:0; 
+  position:absolute; 
+  top:42px; 
+  width:309px; 
+  height:auto; 
+  overflow-y:auto; 
+  -webkit-transition:left 0.25s ease-out, opacity 0.25s ease-out; 
+  text-align:center;
 }

@@ -15,6 +15,7 @@ function PopupObject()
 	var object = new Object();
 	object.PopupRenderManager = new PopupRenderManager();
 	object.PopupInteractionManager = new PopupInteractionManager();
+	object.SearchManager = new SearchManager();
 	return object;
 }
 
@@ -38,12 +39,17 @@ function PopupRenderManager()
 {
 	var renderObject = new Object();
 	renderObject.viewStyle = backgroundPage.backgroundObject.PreferencesManager.getPreferenceValue(backgroundPage.CONSTANTS.VIEW_STYLE_PREF);
+	renderObject.listViewHolder = document.getElementById('movieTitlesList').childNodes[0];
+	renderObject.tileViewHolder = document.getElementById('movieTitlesTiles');
+	renderObject.usedHolder = null;
+	renderObject.unusedHolder = null;
+	renderObject.selectedLanguage = null;
+	renderObject.contentSource = "latest";//latest/search
 	if(!renderObject.viewStyle)
 	{
 		renderObject.viewStyle = backgroundPage.CONSTANTS.DEFAULT_VIEW_STYLE;
 		backgroundPage.backgroundObject.PreferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.VIEW_STYLE_PREF, backgroundPage.CONSTANTS.DEFAULT_VIEW_STYLE);
 	}
-	renderObject.selectedLanguage = null;
 	renderObject.initRender = function()
 	{
 		if(chrome.extension.getBackgroundPage().isDataReady)
@@ -122,6 +128,14 @@ function PopupRenderManager()
 			}
 		}
 	}
+	renderObject.deselectLanguageControl = function()
+	{
+		var langButton = document.getElementById(this.selectedLanguage.toLowerCase()+"Button");
+		if(langButton)
+		{
+			langButton.setAttribute('class','btn btn-inverse');
+		}
+	}
 	renderObject.addLanguageControlBadge = function(control, newMoviesNumber)
 	{
 		badge = document.createElement('span');
@@ -133,6 +147,7 @@ function PopupRenderManager()
 	renderObject.renderMoviesForLanguage = function(language)
 	{
 		popupObject.PopupRenderManager.selectedLanguage = language;
+		popupObject.PopupRenderManager.contentSource = "latest";
 		var languages = backgroundPage.backgroundObject.ContentManager.getLanguagesData();
 		popupObject.PopupRenderManager.renderSelectedLanguageControl(language);
 		var index = languages.indexOf(language),
@@ -145,37 +160,50 @@ function PopupRenderManager()
 		{
 			document.getElementById('movieTitlesTiles').style.opacity = 0.0;
 		}
-		setTimeout(function(){popupObject.PopupRenderManager.renderMoviesTable(movieList, language);},250);
+		setTimeout(function(){popupObject.PopupRenderManager.renderLatestMovies(movieList, language);},250);
 	}
-	renderObject.renderMoviesTable = function(movieObjects, language)
+	renderObject.renderMovieItems = function()
+	{
+		if(this.contentSource == "latest")
+		{
+			popupObject.PopupRenderManager.renderMoviesForLanguage(popupObject.PopupRenderManager.selectedLanguage);	
+		}
+		else if(this.contentSource == "search")
+		{
+			if(popupObject.PopupRenderManager.viewStyle == backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
+			{
+				document.getElementById('movieTitlesList').style.opacity = 0.0;
+			}
+			else
+			{
+				document.getElementById('movieTitlesTiles').style.opacity = 0.0;
+			}
+			setTimeout(popupObject.PopupRenderManager.renderSearchResults,250);
+		}
+	}
+	renderObject.renderLatestMovies = function(movieObjects, language)
 	{
 		var titleTable,
-			usedDOM,
-			unusedDOM,
 			movieTitle,
 			movieCover,
 			movieDetails;
 		if(popupObject.PopupRenderManager.viewStyle == backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
 		{
-			titleTable = document.getElementById('movieTitlesList');
-			titleTable.appendChild(document.createElement('tbody'));
-			usedDOM = titleTable.children[0];
-			unusedDOM = document.getElementById('movieTitlesTiles');
+			titleTable = popupObject.PopupRenderManager.listViewHolder.parentNode;
+			popupObject.PopupRenderManager.usedHolder = popupObject.PopupRenderManager.listViewHolder;
+			popupObject.PopupRenderManager.unusedHolder = popupObject.PopupRenderManager.tileViewHolder;
 		}
 		else
 		{
-			titleTable = document.getElementById('movieTitlesTiles');
-			usedDOM = titleTable;
-			unusedDOM = document.getElementById('movieTitlesList');
+			titleTable = popupObject.PopupRenderManager.tileViewHolder;
+			popupObject.PopupRenderManager.usedHolder = titleTable;
+			popupObject.PopupRenderManager.unusedHolder = popupObject.PopupRenderManager.listViewHolder;
 		}
-		usedDOM.innerHTML = "";  //Removing all other names
-		unusedDOM.innerHTML = "";
+		popupObject.PopupRenderManager.usedHolder.innerHTML = "";  //Removing all other names
+		popupObject.PopupRenderManager.unusedHolder.innerHTML = "";
 		for(i=0; i<movieObjects.length; i++)
 		{
-			movieTitle = movieObjects[i].movieTitle;
-			movieCover = movieObjects[i].movieCover;
-			movieDetails = movieObjects[i].movieDetails;
-			usedDOM.appendChild(this.createMovieItem(movieTitle, movieObjects[i].isNew, movieCover, movieObjects[i].watchURL, movieDetails));
+			popupObject.PopupRenderManager.addMovieItemToRenderedList(movieObjects[i]);
 		} 
 		titleTable.style.opacity = 1.0;
 		if(language)
@@ -186,6 +214,37 @@ function PopupRenderManager()
 				sendMessage(backgroundPage.CONSTANTS.RESET_NEW_FLAGS, language);
 			}	
 		}
+	}
+	renderObject.renderSearchResults = function()
+	{
+		var titleTable;
+		this.contentSource = "search";
+		if(popupObject.PopupRenderManager.viewStyle == backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
+		{
+			titleTable = popupObject.PopupRenderManager.listViewHolder.parentNode;
+			popupObject.PopupRenderManager.usedHolder = popupObject.PopupRenderManager.listViewHolder;
+			popupObject.PopupRenderManager.unusedHolder = popupObject.PopupRenderManager.tileViewHolder;
+		}
+		else
+		{
+			titleTable = popupObject.PopupRenderManager.tileViewHolder;
+			popupObject.PopupRenderManager.usedHolder = titleTable;
+			popupObject.PopupRenderManager.unusedHolder = popupObject.PopupRenderManager.listViewHolder;
+		}
+		popupObject.PopupRenderManager.usedHolder.innerHTML = "";  //Removing all other names
+		popupObject.PopupRenderManager.unusedHolder.innerHTML = ""; 
+		for(i=0; i<popupObject.SearchManager.searchResults.length; i++)
+		{
+			popupObject.PopupRenderManager.addMovieItemToRenderedList(popupObject.SearchManager.searchResults[i]);
+		} 
+		titleTable.style.opacity = 1.0;	
+	}
+	renderObject.addMovieItemToRenderedList = function(movieObject)
+	{
+		var movieTitle = movieObject.movieTitle;
+			movieCover = movieObject.movieCover;
+			movieDetails = movieObject.movieDetails;
+		popupObject.PopupRenderManager.usedHolder.appendChild(this.createMovieItem(movieTitle, movieObject.isNew, movieCover, movieObject.watchURL, movieDetails));
 	}
 	renderObject.createMovieItem = function(movieTitle, isNew, movieCover, watchURL, movieDetails)
 	{
@@ -243,6 +302,7 @@ function PopupRenderManager()
 		holderDiv.appendChild(nameDiv);
 		holderDiv.appendChild(descDiv);
 		td.appendChild(holderDiv);
+		td.style.minWidth = "355px";
 		tr.appendChild(td);
 		tr.style.cursor = 'pointer';
 		clickHandler = popupObject.PopupInteractionManager.getMovieRowClickHandler(backgroundPage.CONSTANTS.HOME_URL+watchURL);
@@ -251,12 +311,12 @@ function PopupRenderManager()
 	}
 	renderObject.formatMovieDescription = function(description)
 	{
-		var castString = "Starring", directorString = "Directed by", musicString = "Music by",
-			castIndex = description.indexOf(castString),
+		var detailsString = "Starring", directorString = "Directed by", musicString = "Music by",
+			castIndex = description.indexOf(detailsString),
 			directorIndex = description.indexOf(directorString),
 			musicIndex = description.indexOf(musicString),
 			castValue="",directorValue="",musicValue="",formattedDescription="";
-		castValue = description.substring(castIndex+castString.length, directorIndex);
+		castValue = description.substring(castIndex+detailsString.length, directorIndex);
 		directorValue = description.substring(directorIndex+directorString.length, musicIndex);
 		musicValue = description.substring(musicIndex+musicString.length);
 		formattedDescription = "<i>Cast:</i> "+castValue + "<br><i>Director:</i> "+ directorValue + "<br><i>Music:</i> " + musicValue;
@@ -292,6 +352,15 @@ function PopupRenderManager()
 			pi.style.display = 'block';
 		}
 	}
+	renderObject.showAlertBox = function(message)
+	{
+		$("#alertTextHolder").text(message);
+		$("#alertBox").css({'opacity':'1','pointer-events':'all'});
+	}
+	renderObject.dismissAlertBox = function()
+	{
+		$("#alertBox").css({'opacity':'0','pointer-events':'none'});
+	}
 	return renderObject;
 }
 
@@ -319,6 +388,7 @@ function PopupInteractionManager()
 			$("#searchLang").val(popupObject.PopupRenderManager.selectedLanguage.toLowerCase());
 			$("#searchTerm").css('color','#BBBBBB');
 			$(".icon-search").css('opacity','0');
+			$("#searchTerm").trigger("focus");	
 		});
 		$("#removeTopBar").click(function(){
 			$('#searchDiv').css('top','-36px');
@@ -326,7 +396,8 @@ function PopupInteractionManager()
 			$('.icon-search').css('opacity','1');
 		});
 		$("#searchTerm").focus(function(){
-			$("#searchTerm").val("");
+			if($("#searchTerm").val().indexOf("Search "+ popupObject.PopupRenderManager.selectedLanguage+" Movies") != -1 )
+				$("#searchTerm").val("");
 			$("#searchTerm").css('color','#000000');
 		});
 		$("#searchTerm").blur(function(){
@@ -337,18 +408,20 @@ function PopupInteractionManager()
 			}
 		});
 		$("#submitSearch").click(function(){
-			$("#searchForm").submit( function () {    
-              $.post(
-               'http://www.einthusan.com/webservice/filters.php',
-                $(this).serialize(),
-                function(data){
-                  populateSearchResults(jQuery.parseJSON(data));
-                }
-              );
-              return false;   
-            });
+			popupObject.SearchManager.initiateSearch();
 		});
-		
+		$("#searchForm").submit( function (event) {    
+          event.preventDefault();
+          if($("#searchTerm").val() == "Search "+popupObject.PopupRenderManager.selectedLanguage+" Movies")
+          {
+          	$("#searchTerm").val("");
+          }
+          popupObject.SearchManager.sendSearchRequest("1"); 
+        });
+        $("#dismissAlertBox").click(function()
+        {
+        	popupObject.PopupRenderManager.dismissAlertBox();
+        });
 	}
 	interactionObject.setBottomBarInteraction = function()
 	{
@@ -363,6 +436,8 @@ function PopupInteractionManager()
 			$("#toolsPanel").css('top','-36px');
 			$("#toolsPanel").css('opacity','0');
 			$(".icon-cog").css('opacity','1');
+			if($("#infoPanel").css('opacity') == '1')
+				$("#dismissInfoPanel").trigger("click");		
 		});
 		$(".icon-info-sign").click(function()
 		{
@@ -378,7 +453,7 @@ function PopupInteractionManager()
 				$("#infoPanel").css('left','-362px');
 			}
 		});
-		$(".close").click(function()
+		$("#dismissInfoPanel").click(function()
 		{
 			$(".icon-info-sign").toggleClass('icon-white');
 			$("#infoPanel").css('opacity','0');
@@ -392,43 +467,101 @@ function PopupInteractionManager()
 		{
 			popupObject.PopupRenderManager.viewStyle = backgroundPage.CONSTANTS.TILE_VIEW_STYLE;
 			backgroundPage.backgroundObject.PreferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.VIEW_STYLE_PREF, backgroundPage.CONSTANTS.TILE_VIEW_STYLE);
-			popupObject.PopupRenderManager.renderMoviesForLanguage(popupObject.PopupRenderManager.selectedLanguage);
+			popupObject.PopupRenderManager.renderMovieItems();
 		})
 		$("#listView").click(function()
 		{
 			popupObject.PopupRenderManager.viewStyle = backgroundPage.CONSTANTS.LIST_VIEW_STYLE;
 			backgroundPage.backgroundObject.PreferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.VIEW_STYLE_PREF, backgroundPage.CONSTANTS.LIST_VIEW_STYLE);
-			popupObject.PopupRenderManager.renderMoviesForLanguage(popupObject.PopupRenderManager.selectedLanguage);	
+			popupObject.PopupRenderManager.renderMovieItems();
 		})
 	}
 	return interactionObject;
 }
 
-function populateSearchResults(data)
+function SearchManager()
 {
-	//alert(data);
-	if(data.found > 0)
+	var searchObject = new Object();
+	searchObject.searchResults = null;
+	searchObject.searchUrl = "http://www.einthusan.com/webservice/filters.php";
+	searchObject.movieDataUrl = "http://www.einthusan.com/webservice/movie.php?id=";
+	searchObject.initiateSearch = function()
 	{
-		resultCountOnPage = Math.min(data.results_per_page, data.found);
-		for(i=0; i<resultCountOnPage; i++)
+		popupObject.SearchManager.searchResults = [];
+	}
+	searchObject.sendSearchRequest = function(page)
+	{
+		$("#searchPage").val(page);
+		$.post(this.searchUrl, $("#searchForm").serialize(), function(data,textStatus){
+              	popupObject.SearchManager.processSearchResponse(data);
+            }
+          ).fail(function(){
+          	popupObject.PopupRenderManager.showAlertBox("Something went wrong.")
+          });
+	}
+	searchObject.processSearchResponse = function(data)
+	{
+		data = jQuery.parseJSON(data);
+		if(data && data.found > 0)
 		{
-			console.log(data.results[i]);
-			//Get the data using movie id here
-			//e.g. http://www.einthusan.com/webservice/movie.php?id=1236
-			//Populate some array with MovieObjects
-			//Try to use same render function as above
+			popupObject.PopupRenderManager.deselectLanguageControl();
+			if(data.page == 1)
+				popupObject.PopupRenderManager.renderSearchResults();
+			for(i=0; i<data.results.length; i++)
+			{
+				$.get(popupObject.SearchManager.movieDataUrl+data.results[i], function( data ) {
+				  popupObject.SearchManager.processMovieData(data);
+				});
+			}
+			if(data.max_page > 1 && data.page<data.max_page)
+			{
+				popupObject.SearchManager.sendSearchRequest(data.page+1);
+			}
 		}
-		if(data.max_page > 1)
+		else
 		{
-			//Save max_page and currentPage# value
-			//send POST requests with page parameter
-			//Do same this as above for the results there
-			//Do lazy load i.e. fetch next page data only if asked
+			if(!data || data.error || data.error == "No Results Found")
+				popupObject.PopupRenderManager.showAlertBox("No movies found.");
 		}
 	}
-	else
+	searchObject.processMovieData = function(data)
 	{
-		//show No movies found message
-		console.log("No movies found.");
+		data = $.parseJSON(data);
+		var mo = popupObject.SearchManager.MovieObject(data.movie_id, data.movie, data.language, data.cover, this.collateMovieDetails(data));
+		popupObject.SearchManager.searchResults.push(mo);
+		popupObject.PopupRenderManager.addMovieItemToRenderedList(mo);
 	}
+	searchObject.collateMovieDetails = function(data)
+	{
+		var cast = new Array();
+		for(i=1; i<=7; i++)
+		{
+			if(data["cast"+i])
+				cast.push(data["cast"+i]);
+			else
+				break;
+		}
+		var detailsStr="Starring ";
+		for(i=0; i<cast.length; i++)
+		{
+			detailsStr = detailsStr + cast[i];
+			if(i==cast.length-2)
+				detailsStr = detailsStr + " and ";
+			else if(i<cast.length-1)
+				detailsStr = detailsStr + ", ";
+		}
+		detailsStr = detailsStr +". Directed by "+data.director+". Music by "+data.composer+".";
+		return detailsStr;
+	}
+	searchObject.MovieObject = function(id, title, language, coverSrc, details)
+	{
+		var mo =  new Object();
+		mo.movieTitle = title;
+		mo.movieCover = "images/covers/"+coverSrc;
+		mo.movieDetails = details;
+		mo.watchURL = "/movies/watch.php?"+language.toLowerCase()+"moviesonline="+title+"&lang="+language.toLowerCase()+"&id="+id;
+		mo.isNew = false;
+		return mo;
+	}
+	return searchObject;
 }

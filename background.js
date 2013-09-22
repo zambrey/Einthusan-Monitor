@@ -16,7 +16,7 @@ var newMoviesCnt,
 		backgroundObject = new BackgroundObject();
 	if(!CONSTANTS)
 		CONSTANTS = new constants();
-	setTimeout(initiate,5000);
+	setTimeout(initiate,8000);
 }
 
 function BackgroundObject()

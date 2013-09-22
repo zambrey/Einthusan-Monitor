@@ -17,40 +17,46 @@
         <div class="bar" style="width:100%;"></div>
       </div>
     </div>
-    <i class='icon-search' style='position:absolute; left:2px; top:14px;'></i>
-    <i class='icon-cog' style='position:absolute; right:2px; top:14px;'></i>
-    <div id='searchDiv' style="background:rgba(128,0,0,1); position:absolute; width:100%; top:-36px; opacity:0; -webkit-transition:top 0.25s ease-out, opacity 0.25s ease-out;">
-      <i id="removeTopBar" class='icon-remove icon-white' style='float:left; margin-left:2px; margin-top:12px; margin-right:2px;'></i>
-      <form id="searchForm" enctype="" class="form-search" action="" method="" style='left:22px; top:4px; margin-top:4px; margin-bottom:4px; margin-left:2px; margin-right:2px;'>
+    <i class='icon-search'></i>
+    <i class='icon-cog'></i>
+    <div id='searchDiv'>
+      <i id="removeTopBar" class='icon-remove icon-white' style=''></i>
+      <form id="searchForm" enctype="" class="form-search" style=''>
         <div class="input-append">
           <input id="searchTerm" name="search" type="text" class="span2 search-query" style="width:230px;">
           <input id="searchLang" name="lang" type="hidden">
-          <button id="submitSearch" class="btn">Search</button>
+          <input id="searchPage" name="page" type="hidden" value="1">
+          <button id="submitSearch" type="submit" class="btn">Search</button>
         </div>
       </form>
     </div>
 
     <div id='toolsPanel' style='top:-36px;'>
-      <i id="removeBottomBar" class='icon-remove icon-white' style='float:right;margin-right:4px; margin-left:2px;margin-top:10px;'></i>
-      <i class='icon-info-sign icon-white' style='float:right; margin-left:2px;margin-top:10px;margin-right:2px;'></i>
+      <i id="removeBottomBar" class='icon-remove icon-white'></i>
+      <i class='icon-info-sign icon-white'></i>
       <div class="btn-group" style='float:right; margin:2px; margin-right:2px; margin-left:2px;'>
         <button class="btn" id='tileView'><i style="margin-top:2px;" class='icon-th'></i></button>
         <button class="btn" id='listView'><i style="margin-top:2px;"class='icon icon-th-list'></i></button>
       </div>
     </div>
     
-    <div id="infoPanel" class="alert alert-error" style="opacity:0;position:absolute; top:42px; width:306px; height:auto; overflow-y:auto; left:-362px;-webkit-transition:left 0.25s ease-out, opacity 0.25s ease-out">
-      <button type="button" class="close" data-dismiss="alert">&times;</button>
+    <div id="infoPanel" class="alert alert-error" style="">
+      <button id="dismissInfoPanel" type="button" class="close" data-dismiss="alert">&times;</button>
       <b>Einthusan Monitor</b> v2.0
-      <h6>UPDATES</h6>
+      <h6>Updates</h6>
       <ul>
         <li>Search functionality now added.</li>
       </ul>
       <h6>Your feedback is highly appreciated. Go <a id="feedback" href="https://chrome.google.com/webstore/detail/einthusan-monitor/khhfpiaglmihaifnfocggdmifdeigkhg/reviews?hl=en">here</a>.</h6>
     </div>
 
+    <div id="alertBox" class="alert alert-error">
+      <button id="dismissAlertBox" type="button" class="close" data-dismiss="alert">&times;</button>
+      <h4 id="alertTextHolder"></h4>
+    </div>
+
     <div id='languageButtons'></div>
-    <table id='movieTitlesList' class='table table-hover'></table>
+    <table id='movieTitlesList' class='table table-hover'><tbody></tbody></table>
     <div id='movieTitlesTiles'></div>
 
   </body>
