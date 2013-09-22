@@ -219,10 +219,17 @@ input#timeValue
   text-align:right;
 }
 
-p#lastUpdated
+p.lastUpdated
 {
   text-align:center;
   font-size:10px;
+}
+
+p.lastUpdatedError
+{
+  text-align:center;
+  font-size:10px;
+  color:red;
 }
 
 div#searchDiv

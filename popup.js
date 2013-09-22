@@ -13,6 +13,7 @@ var backgroundPage = chrome.extension.getBackgroundPage(),
 function PopupObject()
 {
 	var object = new Object();
+	object.numAttempts = 0;
 	object.PopupRenderManager = new PopupRenderManager();
 	object.PopupInteractionManager = new PopupInteractionManager();
 	object.SearchManager = new SearchManager();
@@ -77,7 +78,10 @@ function PopupRenderManager()
 		else
 		{
 			popupObject.PopupRenderManager.showProgressIndicator();
-			setTimeout(popupObject.PopupRenderManager.initRender, 200);
+			if(popupObject.numAttempts++ < 15)
+				setTimeout(popupObject.PopupRenderManager.initRender, 1000);
+			else
+				popupObject.PopupRenderManager.showProgressFailure();
 		}
 	}
 	renderObject.renderLanguageControls = function(languages)
@@ -353,6 +357,11 @@ function PopupRenderManager()
 		{
 			pi.style.display = 'block';
 		}
+	}
+	renderObject.showProgressFailure = function()
+	{
+		$("#progressIndicatorDiv").css('display','none');
+		$("#progressFail").css('display','block');
 	}
 	renderObject.showAlertBox = function(message)
 	{

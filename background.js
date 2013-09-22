@@ -8,7 +8,7 @@ var CONSTANTS = null;
 var newMoviesCnt,
 	langsChecked,
 	isDataReady = false,
-	lastUpdated = 0;
+	lastUpdated = -1;
 	REFRESH_INTERVAL = 3*60*60*1000; //Three hour
 
 {
@@ -63,7 +63,6 @@ function initiate()
 {
 	sendXMLRequest(CONSTANTS.HOME_URL, CONSTANTS.LANGUAGES_REQUEST, null);
 	setTimeout(initiate, getRefreshInterval());
-	lastUpdated = new Date().getTime();
 }
 
 function getMovieTitlesForLanguage(languageName)
@@ -127,6 +126,7 @@ function handleXMLRequestResponse(requestType, languageName, responseText)
 		}
 		backgroundObject.ContentManager.setMoviesData(capitaliseFirstLetter(languageName), movieObjArray);
 		updateNumberOfNewMovies(languageName, movieObjArray);
+		lastUpdated = new Date().getTime();
 	}
 }
 

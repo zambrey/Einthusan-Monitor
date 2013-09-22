@@ -6,10 +6,21 @@
 var backgroundPage = chrome.extension.getBackgroundPage(),
 	defaultLang = backgroundPage.backgroundObject.PreferencesManager.getPreferenceValue(backgroundPage.CONSTANTS.DEF_LANG_PREF),
 	timeVal = backgroundPage.backgroundObject.PreferencesManager.getPreferenceValue(backgroundPage.CONSTANTS.REFRESH_TIME_VAL_PREF),
-	timeUnit = backgroundPage.backgroundObject.PreferencesManager.getPreferenceValue(backgroundPage.CONSTANTS.REFRESH_TIME_UNIT_PREF);
+	timeUnit = backgroundPage.backgroundObject.PreferencesManager.getPreferenceValue(backgroundPage.CONSTANTS.REFRESH_TIME_UNIT_PREF),
+	numAttempts = 0;
 
 {
-	if(backgroundPage)
+	renderOptionsPage();
+	$("#selectedLanguage").html(defaultLang+" <span class=\"caret\"></span>");
+	$("#timeValue").val(timeVal);
+	$("#selectedTimeUnit").html(timeUnit+" <span class=\"caret\"></span>");	
+	$(".lastUpdated").text(getLastUpdatedText());
+	//disablePrefs();
+}
+
+function renderOptionsPage()
+{
+	if(backgroundPage && backgroundPage.isDataReady)
 	{
 		var listHtml = "",
 			languages = backgroundPage.backgroundObject.ContentManager.getLanguagesData();
@@ -18,14 +29,19 @@ var backgroundPage = chrome.extension.getBackgroundPage(),
 			listHtml = listHtml + "<li><a href=#>"+languages[i]+"</a></li>";
 		}
 		$("#languageList").html(listHtml);
-		$("#selectedLanguage").html(defaultLang+" <span class=\"caret\"></span>");
-		$("#timeValue").val(timeVal);
-		$("#selectedTimeUnit").html(timeUnit+" <span class=\"caret\"></span>");	
-		$("#lastUpdated").text(getLastUpdatedText());
+		//enablePrefs();
+		$(".lastUpdated").text(getLastUpdatedText());
+	}
+	else
+	{
+		if(numAttempts++ < 15)
+			setTimeout(renderOptionsPage,1000);
+		else
+			showError();
 	}
 }
 
- $(function(){
+$(function(){
 
     $(".dropdown-menu li a").click(function(){
 		$(this).parent().parent().prev().html($(this).text()+" <span class=\"caret\"></span>");
@@ -47,20 +63,44 @@ var backgroundPage = chrome.extension.getBackgroundPage(),
 
 });
 
- function getLastUpdatedText()
- {
- 	var currentTime = new Date().getTime(),
- 		readableTime,
- 		diff = currentTime - backgroundPage.lastUpdated,
- 		hoursStr="",
- 		minutesStr="",
- 		secondsStr="";
- 	readableTime = convertMillisecondsToReadableForm(diff);
- 	hoursStr = Math.floor(readableTime[0])>0 ? Math.floor(readableTime[0])+" hours" : "";
- 	minutesStr = Math.floor(readableTime[1])>0 ? Math.floor(readableTime[1])+" minutes" : "";
- 	secondsStr = Math.floor(readableTime[2])>0  ? Math.floor(readableTime[2])+" seconds ago." : (!hoursStr && !minutesStr ? "just now.":"");
- 	return "Data last updated "+hoursStr+" "+minutesStr+" "+secondsStr;
- }
+function getLastUpdatedText()
+{
+	var currentTime = new Date().getTime(),
+		readableTime,
+		diff = currentTime - backgroundPage.lastUpdated,
+		hoursStr="",
+		minutesStr="",
+		secondsStr="";
+	if(backgroundPage.lastUpdated < 0)
+	{
+		return "Data will be refreshed soon.";
+	}
+	readableTime = convertMillisecondsToReadableForm(diff);
+	hoursStr = Math.floor(readableTime[0])>0 ? Math.floor(readableTime[0])+" hours" : "";
+	minutesStr = Math.floor(readableTime[1])>0 ? Math.floor(readableTime[1])+" minutes" : "";
+	secondsStr = Math.floor(readableTime[2])>0  ? Math.floor(readableTime[2])+" seconds ago." : (!hoursStr && !minutesStr ? "just now.":"");
+	return "Data last updated "+hoursStr+" "+minutesStr+" "+secondsStr;
+}
+
+function showError()
+{
+	$(".lastUpdated").text("Something went wrong.");
+	$(".lastUpdated").attr('class','lastUpdatedError');
+}
+
+function disablePrefs()
+{
+	$('#selectedLanguage').prop('disabled', true);
+	$("#timeValue").prop('disabled', true);
+	$("#selectedTimeUnit").prop('disabled', true);
+}
+
+function enablePrefs()
+{
+	$('#selectedLanguage').prop('disabled', false);
+	$("#timeValue").prop('disabled', false);
+	$("#selectedTimeUnit").prop('disabled', false);
+}
 
  function convertMillisecondsToReadableForm(milli)
  {
