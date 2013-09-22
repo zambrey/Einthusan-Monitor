@@ -71,6 +71,8 @@ function PopupRenderManager()
 			popupObject.PopupRenderManager.renderMoviesForLanguage(startLang);
 			popupObject.PopupRenderManager.renderToolsBar();
 			popupObject.PopupRenderManager.renderSearchBar();
+			$(".icon-cog").css('display','block');
+			$(".icon-search").css('display','block');
 		}
 		else
 		{

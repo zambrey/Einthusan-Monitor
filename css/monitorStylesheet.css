@@ -71,7 +71,7 @@ table#movieTitlesList>tbody::-webkit-scrollbar-thumb, div#movieTitlesTiles::-web
   opacity:1.0; 
   bottom:0; 
   right:0; 
-  display:block;
+  display:none;
   -webkit-transition: opacity 0.15s ease-out;
 }
 
@@ -79,7 +79,7 @@ table#movieTitlesList>tbody::-webkit-scrollbar-thumb, div#movieTitlesTiles::-web
 {
   position:absolute; 
   opacity:1.0; 
-  display:block;
+  display:none;
   -webkit-transition: opacity 0.15s ease-out;
 }
 

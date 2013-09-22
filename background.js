@@ -125,7 +125,6 @@ function handleXMLRequestResponse(requestType, languageName, responseText)
 												"Starring "+movieDetails[i].innerText.substring(3),
 												movieCovers[i].getAttribute('href')));
 		}
-		//fetchedTitles[languageIndex] = movieObjArray;
 		backgroundObject.ContentManager.setMoviesData(capitaliseFirstLetter(languageName), movieObjArray);
 		updateNumberOfNewMovies(languageName, movieObjArray);
 	}
@@ -141,6 +140,10 @@ function getResponseHandler(req, requestType, languageName, responseHandler)
 			{
 				responseHandler(requestType, languageName, req.responseText);
 			}
+		}
+		else
+		{
+			console.log("Something went wrong.")
 		}
 	}
 }
