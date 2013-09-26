@@ -162,25 +162,13 @@ function PopupRenderManager()
 		{
 			popupObject.PopupRenderManager.tileViewHolder.style.opacity = 0.0;
 		}
-		setTimeout(popupObject.PopupRenderManager.renderDataSource,250);
-		if(movieItemsSource == "latest")
-		{
-			var language = popupObject.PopupRenderManager.selectedLanguage;
-			if(language)
-			{
-				if(backgroundPage.newMoviesCnt[backgroundPage.backgroundObject.ContentManager.getLanguageIndex(language)]>0)
-				{	
-					backgroundPage.backgroundObject.CookieManager.setCookie(language.toLowerCase(),popupObject.PopupRenderManager.dataSource);
-					sendMessage(backgroundPage.CONSTANTS.RESET_NEW_FLAGS, language);
-				}	
-			}
-		}
+		setTimeout(function(){popupObject.PopupRenderManager.renderDataSource(movieItemsSource);},250);
 	}
 	renderObject.switchViewStyle = function()
 	{
 		this.renderDataSource();
 	}
-	renderObject.renderDataSource = function()
+	renderObject.renderDataSource = function(movieItemsSource)
 	{
 		var titleTable,
 			movieObjects = popupObject.PopupRenderManager.dataSource;
@@ -203,6 +191,18 @@ function PopupRenderManager()
 			popupObject.PopupRenderManager.addMovieItemToRenderedList(movieObjects[i]);
 		} 
 		titleTable.style.opacity = 1.0;
+		if(movieItemsSource == "latest")
+		{
+			var language = popupObject.PopupRenderManager.selectedLanguage;
+			if(language)
+			{
+				if(backgroundPage.newMoviesCnt[backgroundPage.backgroundObject.ContentManager.getLanguageIndex(language)]>0)
+				{	
+					backgroundPage.backgroundObject.CookieManager.setCookie(language.toLowerCase(),popupObject.PopupRenderManager.dataSource);
+					sendMessage(backgroundPage.CONSTANTS.RESET_NEW_FLAGS, language);
+				}	
+			}
+		}
 	}
 	renderObject.addMovieItemToRenderedList = function(movieObject)
 	{
@@ -472,6 +472,7 @@ function SearchManager()
 	searchObject.searchAborted = false;
 	searchObject.initiateSearch = function()
 	{
+		this.abortSearch();
 		popupObject.PopupRenderManager.dataSource = [];
 	}
 	searchObject.abortSearch = function()
@@ -502,7 +503,6 @@ function SearchManager()
 				popupObject.PopupRenderManager.renderMovieItems("search");
 				popupObject.PopupRenderManager.deselectLanguageControl();
 			}
-				
 			for(i=0; i<data.results.length; i++)
 			{
 				$.get(popupObject.SearchManager.movieDataUrl+data.results[i], function( data ) {
@@ -517,7 +517,9 @@ function SearchManager()
 		else
 		{
 			if(!data || data.error || data.error == "No Results Found")
+			{
 				popupObject.PopupRenderManager.showAlertBox("No movies found.");
+			}
 		}
 	}
 	searchObject.processMovieData = function(data)

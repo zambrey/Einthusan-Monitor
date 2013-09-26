@@ -61,6 +61,7 @@ function constants()
 
 function initiate()
 {
+	isDataReady = false;
 	sendXMLRequest(CONSTANTS.HOME_URL, CONSTANTS.LANGUAGES_REQUEST, null);
 	setTimeout(initiate, getRefreshInterval());
 }
@@ -140,10 +141,6 @@ function getResponseHandler(req, requestType, languageName, responseHandler)
 			{
 				responseHandler(requestType, languageName, req.responseText);
 			}
-		}
-		else
-		{
-			console.log("Something went wrong.")
 		}
 	}
 }
