@@ -381,9 +381,10 @@ function PopupInteractionManager()
 			}
 		});
 		$("#submitSearch").click(function(){
-			popupObject.SearchManager.initiateSearch();
+			
 		});
-		$("#searchForm").submit( function (event) {    
+		$("#searchForm").submit( function (event) {
+		  popupObject.SearchManager.initiateSearch();    
           event.preventDefault();
           if($("#searchTerm").val() == "Search "+popupObject.PopupRenderManager.selectedLanguage+" Movies")
           {
@@ -469,7 +470,6 @@ function SearchManager()
 	searchObject.request = null;
 	searchObject.searchUrl = "http://www.einthusan.com/webservice/filters.php";
 	searchObject.movieDataUrl = "http://www.einthusan.com/webservice/movie.php?id=";
-	searchObject.searchAborted = false;
 	searchObject.initiateSearch = function()
 	{
 		this.abortSearch();
@@ -477,23 +477,25 @@ function SearchManager()
 	}
 	searchObject.abortSearch = function()
 	{
-		this.searchAborted = true;
 		if(this.request)
+		{
 			this.request.abort();
+
+		}
 	}
 	searchObject.sendSearchRequest = function(page)
 	{
-		this.searchAborted = false;
 		$("#searchPage").val(page);
-		this.request = $.post(this.searchUrl, $("#searchForm").serialize(), function(data,textStatus){
-              	popupObject.SearchManager.processSearchResponse(data);
+		this.request = $.post(this.searchUrl, $("#searchForm").serialize(), function(data,textStatus, xhr){
+	
+              	popupObject.SearchManager.processSearchResponse(data, xhr);
             }
           ).fail(function(jqXHR, textStatus, errorThrown){
      		if(errorThrown != "abort")
           		popupObject.PopupRenderManager.showAlertBox("Something went wrong.")
           });
 	}
-	searchObject.processSearchResponse = function(data)
+	searchObject.processSearchResponse = function(data, xhr)
 	{
 		data = jQuery.parseJSON(data);
 		if(data && data.found > 0)
@@ -505,9 +507,11 @@ function SearchManager()
 			}
 			for(i=0; i<data.results.length; i++)
 			{
-				$.get(popupObject.SearchManager.movieDataUrl+data.results[i], function( data ) {
-				  popupObject.SearchManager.processMovieData(data);
-				});
+				$.get(popupObject.SearchManager.movieDataUrl+data.results[i], (function(req){
+				  	return function(data){
+								popupObject.SearchManager.processMovieData(data, req);
+							}
+				})(xhr));
 			}
 			if(data.max_page > 1 && data.page<data.max_page)
 			{
@@ -522,13 +526,14 @@ function SearchManager()
 			}
 		}
 	}
-	searchObject.processMovieData = function(data)
+	searchObject.processMovieData = function(data, xhr)
 	{
-		data = $.parseJSON(data);
-		var mo = popupObject.SearchManager.MovieObject(data.movie_id, data.movie, data.language, data.cover, this.collateMovieDetails(data));
-		if(!this.searchAborted)
+		if(xhr == popupObject.SearchManager.request)
 		{
+			data = $.parseJSON(data);
+			var mo = popupObject.SearchManager.MovieObject(data.movie_id, data.movie, data.language, data.cover, this.collateMovieDetails(data));
 			popupObject.PopupRenderManager.dataSource.push(mo);
+
 			popupObject.PopupRenderManager.addMovieItemToRenderedList(mo);	
 		}
 	}
