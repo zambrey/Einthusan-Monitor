@@ -166,7 +166,7 @@ function PopupRenderManager()
 	}
 	renderObject.switchViewStyle = function()
 	{
-		this.renderDataSource();
+		this.renderMovieItems();
 	}
 	renderObject.renderDataSource = function(movieItemsSource)
 	{
