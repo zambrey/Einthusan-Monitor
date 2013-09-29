@@ -321,3 +321,23 @@ div#searchDiv
   -webkit-transition:left 0.25s ease-out, opacity 0.25s ease-out; 
   text-align:center;
 }
+
+@-webkit-keyframes rotate 
+{
+    from 
+    {
+        -webkit-transform: rotate(0deg);
+    }
+    to 
+    { 
+        -webkit-transform: rotate(360deg);
+    }
+}
+
+.icon-refresh-rotate 
+{
+    -webkit-animation-name: rotate; 
+    -webkit-animation-duration: 1.5s; 
+    -webkit-animation-iteration-count: infinite;
+    -webkit-animation-timing-function: linear;
+}

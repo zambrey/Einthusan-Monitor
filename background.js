@@ -55,6 +55,7 @@ function constants()
 	object.RESET_NEW_FLAGS = "resetNewFlags";
 	object.INITIATE_AGAIN = "initiateAgain";
 	object.NEW_FLAGS_RESET_DONE = "newFlagsReset";
+	object.INITIATED = "initiated";
 
 	return object;
 }
@@ -217,6 +218,7 @@ function fireNotification()
 	if(sumUpArray(langsChecked) == backgroundObject.ContentManager.getLanguagesData().length)
 	{
 		isDataReady = true;
+		sendMessage(CONSTANTS.INITIATED);
 		setBadge();
 	}
 	else
@@ -303,6 +305,14 @@ function setBadge()
 		chrome.browserAction.setBadgeText({"text":"".toString()});//248,148,6
 		chrome.browserAction.setBadgeBackgroundColor({"color":[128,0,0,0]});		
 	}
+}
+
+function sendMessage(msgType)
+{
+	var msgObject = new Object();
+	msgObject.messageType = msgType;
+	chrome.extension.sendRequest(msgObject, function(response){
+	});
 }
 
 chrome.extension.onRequest.addListener(

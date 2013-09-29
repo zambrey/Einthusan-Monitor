@@ -467,7 +467,7 @@ function PopupInteractionManager()
 function SearchManager()
 {
 	var searchObject = new Object();
-	searchObject.request = null;
+	searchObject.requests = new Array();
 	searchObject.searchUrl = "http://www.einthusan.com/webservice/filters.php";
 	searchObject.movieDataUrl = "http://www.einthusan.com/webservice/movie.php?id=";
 	searchObject.initiateSearch = function()
@@ -477,16 +477,19 @@ function SearchManager()
 	}
 	searchObject.abortSearch = function()
 	{
-		if(this.request)
+		if(this.requests.length > 0)
 		{
-			this.request.abort();
-
+			for(i=0; i<this.requests.length; i++)
+			{
+				this.requests[i].abort();
+			}
 		}
+		this.requests = [];
 	}
 	searchObject.sendSearchRequest = function(page)
 	{
 		$("#searchPage").val(page);
-		this.request = $.post(this.searchUrl, $("#searchForm").serialize(), function(data,textStatus, xhr){
+		var request = $.post(this.searchUrl, $("#searchForm").serialize(), function(data,textStatus, xhr){
 	
               	popupObject.SearchManager.processSearchResponse(data, xhr);
             }
@@ -494,6 +497,7 @@ function SearchManager()
      		if(errorThrown != "abort")
           		popupObject.PopupRenderManager.showAlertBox("Something went wrong.")
           });
+          this.requests.push(request);
 	}
 	searchObject.processSearchResponse = function(data, xhr)
 	{
@@ -528,7 +532,8 @@ function SearchManager()
 	}
 	searchObject.processMovieData = function(data, xhr)
 	{
-		if(xhr == popupObject.SearchManager.request)
+		//check if request is in the array anywhere
+		if(popupObject.SearchManager.requests.indexOf(xhr) != -1 )
 		{
 			data = $.parseJSON(data);
 			var mo = popupObject.SearchManager.MovieObject(data.movie_id, data.movie, data.language, data.cover, this.collateMovieDetails(data));

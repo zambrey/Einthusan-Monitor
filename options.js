@@ -29,8 +29,7 @@ function renderOptionsPage()
 			listHtml = listHtml + "<li><a href=#>"+languages[i]+"</a></li>";
 		}
 		$("#languageList").html(listHtml);
-		//enablePrefs();
-		$(".lastUpdated").text(getLastUpdatedText());
+		setLastUpdatedText();
 	}
 	else
 	{
@@ -61,7 +60,16 @@ $(function(){
    		sendMessage(backgroundPage.CONSTANTS.INITIATE_AGAIN);
    });
 
+   $(".icon-refresh").click(function(){
+   		sendMessage(backgroundPage.CONSTANTS.INITIATE_AGAIN);
+   })
 });
+
+function setLastUpdatedText()
+{
+	$(".lastUpdated").text(getLastUpdatedText());
+	setTimeout(setLastUpdatedText, 5*60*1000);	//Update text every 5 mins
+}
 
 function getLastUpdatedText()
 {
@@ -88,37 +96,36 @@ function showError()
 	$(".lastUpdated").attr('class','lastUpdatedError');
 }
 
-function disablePrefs()
+function convertMillisecondsToReadableForm(milli)
 {
-	$('#selectedLanguage').prop('disabled', true);
-	$("#timeValue").prop('disabled', true);
-	$("#selectedTimeUnit").prop('disabled', true);
+	var arr = new Array(3);
+	milli = milli/1000;
+	arr[2] = milli%60;
+	milli = Math.floor(milli/60);
+	arr[1] = milli%60;
+	milli = Math.floor(milli/60);
+	arr[0] = milli;
+	return arr;
 }
 
-function enablePrefs()
-{
-	$('#selectedLanguage').prop('disabled', false);
-	$("#timeValue").prop('disabled', false);
-	$("#selectedTimeUnit").prop('disabled', false);
-}
-
- function convertMillisecondsToReadableForm(milli)
- {
- 	var arr = new Array(3);
- 	milli = milli/1000;
- 	arr[2] = milli%60;
- 	milli = Math.floor(milli/60);
- 	arr[1] = milli%60;
- 	milli = Math.floor(milli/60);
- 	arr[0] = milli;
- 	return arr;
- }
-
- function sendMessage(msgType)
+function sendMessage(msgType)
 {
 	var msgObject = new Object();
 	msgObject.messageType = msgType;
+	if(msgType == backgroundPage.CONSTANTS.INITIATE_AGAIN)
+	{
+		$(".icon-refresh").toggleClass('icon-refresh-rotate');
+	}
 	chrome.extension.sendRequest(msgObject, function(response){
 	});
 }
+
+chrome.extension.onRequest.addListener(
+	function(request, sender, sendResponse) {
+		if (request.messageType == backgroundPage.CONSTANTS.INITIATED)
+		{
+			setLastUpdatedText();
+			$(".icon-refresh").toggleClass('icon-refresh-rotate');
+		}	
+	});
  
