@@ -15,32 +15,36 @@ var backgroundPage = chrome.extension.getBackgroundPage(),
 	$("#timeValue").val(timeVal);
 	$("#selectedTimeUnit").html(timeUnit+" <span class=\"caret\"></span>");	
 	$(".lastUpdated").text(getLastUpdatedText());
-	//disablePrefs();
+}
+
+function renderOnDataReady()
+{
+	var listHtml = "",
+		languages = backgroundPage.backgroundObject.ContentManager.getLanguagesData();
+	for(i=0; i<languages.length; i++)
+	{
+		listHtml = listHtml + "<li><a href=#>"+languages[i]+"</a></li>";
+	}
+	$("#languageList").html(listHtml);
+	setLastUpdatedText();
+	setInteraction();
+}
+
+function setTimeoutOnDataNotReady()
+{
+	if(numAttempts++ < 15)
+		setTimeout(renderOptionsPage,1000);
+	else
+		showError();
 }
 
 function renderOptionsPage()
 {
-	if(backgroundPage && backgroundPage.isDataReady)
-	{
-		var listHtml = "",
-			languages = backgroundPage.backgroundObject.ContentManager.getLanguagesData();
-		for(i=0; i<languages.length; i++)
-		{
-			listHtml = listHtml + "<li><a href=#>"+languages[i]+"</a></li>";
-		}
-		$("#languageList").html(listHtml);
-		setLastUpdatedText();
-	}
-	else
-	{
-		if(numAttempts++ < 15)
-			setTimeout(renderOptionsPage,1000);
-		else
-			showError();
-	}
+	sendMessage(backgroundPage.CONSTANTS.IS_DATA_READY_QUERY);
 }
 
-$(function(){
+function setInteraction()
+{
 
     $(".dropdown-menu li a").click(function(){
 		$(this).parent().parent().prev().html($(this).text()+" <span class=\"caret\"></span>");
@@ -63,12 +67,12 @@ $(function(){
    $(".icon-refresh").click(function(){
    		sendMessage(backgroundPage.CONSTANTS.INITIATE_AGAIN);
    })
-});
+}
 
 function setLastUpdatedText()
 {
 	$(".lastUpdated").text(getLastUpdatedText());
-	setTimeout(setLastUpdatedText, 5*60*1000);	//Update text every 5 mins
+	setTimeout(setLastUpdatedText, 1*60*1000);	//Update text every 1 mins
 }
 
 function getLastUpdatedText()
@@ -78,16 +82,24 @@ function getLastUpdatedText()
 		diff = currentTime - backgroundPage.lastUpdated,
 		hoursStr="",
 		minutesStr="",
-		secondsStr="";
+		secondsStr="",
+		hour, minute, second;
 	if(backgroundPage.lastUpdated < 0)
 	{
-		return "Data will be refreshed soon.";
+		return "Data will be updated soon.";
 	}
 	readableTime = convertMillisecondsToReadableForm(diff);
-	hoursStr = Math.floor(readableTime[0])>0 ? Math.floor(readableTime[0])+" hours" : "";
-	minutesStr = Math.floor(readableTime[1])>0 ? Math.floor(readableTime[1])+" minutes" : "";
-	secondsStr = Math.floor(readableTime[2])>0  ? Math.floor(readableTime[2])+" seconds ago." : (!hoursStr && !minutesStr ? "just now.":"");
-	return "Data last updated "+hoursStr+" "+minutesStr+" "+secondsStr;
+	hour = Math.floor(readableTime[0]);
+	minute = Math.floor(readableTime[1]);
+	second = Math.floor(readableTime[2]);
+	if(hour == 0 && minute == 0 && second == 0)
+	{
+		return "Data updated just now."
+	}
+	hoursStr = hour>0 ? hour+" hours" : "";
+	minutesStr = minute>0 ? minute+" minutes" : "";
+	secondsStr = second>0  ? second+" seconds" : "";
+	return "Data last updated "+hoursStr+" "+minutesStr+" "+secondsStr + " ago.";
 }
 
 function showError()
@@ -100,11 +112,11 @@ function convertMillisecondsToReadableForm(milli)
 {
 	var arr = new Array(3);
 	milli = milli/1000;
-	arr[2] = milli%60;
-	milli = Math.floor(milli/60);
-	arr[1] = milli%60;
-	milli = Math.floor(milli/60);
-	arr[0] = milli;
+	for(var i=2; i>=0; i--)
+	{
+		arr[i] = milli%60;
+		milli = Math.floor(milli/60);
+	}
 	return arr;
 }
 
@@ -114,9 +126,20 @@ function sendMessage(msgType)
 	msgObject.messageType = msgType;
 	if(msgType == backgroundPage.CONSTANTS.INITIATE_AGAIN)
 	{
-		$(".icon-refresh").toggleClass('icon-refresh-rotate');
+		$(".icon-refresh").addClass('icon-refresh-rotate');
 	}
 	chrome.extension.sendRequest(msgObject, function(response){
+		if(response.messageType == backgroundPage.CONSTANTS.IS_DATA_READY_RESPONSE)
+		{
+			if(response.status)
+			{
+				renderOnDataReady();
+			}
+			else
+			{
+				setTimeoutOnDataNotReady();
+			}
+		}
 	});
 }
 
@@ -125,7 +148,7 @@ chrome.extension.onRequest.addListener(
 		if (request.messageType == backgroundPage.CONSTANTS.INITIATED)
 		{
 			setLastUpdatedText();
-			$(".icon-refresh").toggleClass('icon-refresh-rotate');
+			$(".icon-refresh").removeClass('icon-refresh-rotate');
 		}	
 	});
  

@@ -33,6 +33,17 @@ function sendMessage(msgType, languageName)
 		{
 			popupObject.PopupRenderManager.removeLanguageControlBadge(languageName);
 		}
+		if(response.messageType == backgroundPage.CONSTANTS.IS_DATA_READY_RESPONSE)
+		{
+			if(response.status)
+			{
+				popupObject.PopupRenderManager.renderOnDataReady();
+			}
+			else
+			{
+				popupObject.PopupRenderManager.setTimeoutOnDataNotReady();
+			}
+		}
 	});
 }
 
@@ -51,39 +62,40 @@ function PopupRenderManager()
 		renderObject.viewStyle = backgroundPage.CONSTANTS.DEFAULT_VIEW_STYLE;
 		backgroundPage.backgroundObject.PreferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.VIEW_STYLE_PREF, backgroundPage.CONSTANTS.DEFAULT_VIEW_STYLE);
 	}
+	renderObject.renderOnDataReady = function()
+	{
+		var startLang, languages, selControl;
+		popupObject.PopupRenderManager.hideProgressIndicator();
+		if(!backgroundPage)
+		{
+			backgroundPage = chrome.extension.getBackgroundPage();	
+		}
+		languages = backgroundPage.backgroundObject.ContentManager.getLanguagesData();
+		popupObject.PopupRenderManager.renderLanguageControls(languages);
+		startLang = backgroundPage.backgroundObject.PreferencesManager.getPreferenceValue(backgroundPage.CONSTANTS.DEF_LANG_PREF);
+		if(!startLang)
+		{
+			startLang = languages[0];
+			backgroundPage.backgroundObject.PreferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.DEF_LANG_PREF, startLang);
+		}
+		selControl = startLang.toLowerCase()+"Button";
+		$("#"+selControl).trigger("click");
+		popupObject.PopupRenderManager.renderToolsBar();
+		popupObject.PopupRenderManager.renderSearchBar();
+		$(".icon-cog").css('display','block');
+		$(".icon-search").css('display','block');
+	}
+	renderObject.setTimeoutOnDataNotReady = function()
+	{
+		popupObject.PopupRenderManager.showProgressIndicator();
+		if(popupObject.numAttempts++ < 15)
+			setTimeout(popupObject.PopupRenderManager.initRender, 1000);
+		else
+			popupObject.PopupRenderManager.showProgressFailure();
+	}
 	renderObject.initRender = function()
 	{
-		if(chrome.extension.getBackgroundPage().isDataReady)
-		{
-			var startLang, languages, selControl;
-			popupObject.PopupRenderManager.hideProgressIndicator();
-			if(!backgroundPage)
-			{
-				backgroundPage = chrome.extension.getBackgroundPage();	
-			}
-			languages = backgroundPage.backgroundObject.ContentManager.getLanguagesData();
-			popupObject.PopupRenderManager.renderLanguageControls(languages);
-			startLang = backgroundPage.backgroundObject.PreferencesManager.getPreferenceValue(backgroundPage.CONSTANTS.DEF_LANG_PREF);
-			if(!startLang)
-			{
-				startLang = languages[0];
-				backgroundPage.backgroundObject.PreferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.DEF_LANG_PREF, startLang);
-			}
-			selControl = startLang.toLowerCase()+"Button";
-			$("#"+selControl).trigger("click");
-			popupObject.PopupRenderManager.renderToolsBar();
-			popupObject.PopupRenderManager.renderSearchBar();
-			$(".icon-cog").css('display','block');
-			$(".icon-search").css('display','block');
-		}
-		else
-		{
-			popupObject.PopupRenderManager.showProgressIndicator();
-			if(popupObject.numAttempts++ < 15)
-				setTimeout(popupObject.PopupRenderManager.initRender, 1000);
-			else
-				popupObject.PopupRenderManager.showProgressFailure();
-		}
+		sendMessage(backgroundPage.CONSTANTS.IS_DATA_READY_QUERY);
 	}
 	renderObject.renderLanguageControls = function(languages)
 	{
@@ -440,6 +452,10 @@ function PopupInteractionManager()
 		$("#feedback").click(function()
 		{
 			chrome.tabs.create({"url":$("#feedback").attr('href')},function(){});
+		});
+		$("#homepage").click(function()
+		{
+			chrome.tabs.create({"url":$("#homepage").attr("href")},function(){});
 		});
 		$("#tileView").click(function()
 		{

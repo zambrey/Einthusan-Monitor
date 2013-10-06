@@ -3,12 +3,13 @@
  * Ameya Zambre
  * ameyazambre@gmail.com
  */
-var backgroundObject = null;
-var CONSTANTS = null;
-var newMoviesCnt,
+var backgroundObject = null,
+	CONSTANTS = null,
+	newMoviesCnt,
 	langsChecked,
 	isDataReady = false,
-	lastUpdated = -1;
+	lastUpdated = -1,
+	requests,
 	REFRESH_INTERVAL = 3*60*60*1000; //Three hour
 
 {
@@ -56,6 +57,8 @@ function constants()
 	object.INITIATE_AGAIN = "initiateAgain";
 	object.NEW_FLAGS_RESET_DONE = "newFlagsReset";
 	object.INITIATED = "initiated";
+	object.IS_DATA_READY_QUERY = "isDataReadyQuery";
+	object.IS_DATA_READY_RESPONSE = "isDataReadyResponse"
 
 	return object;
 }
@@ -63,6 +66,7 @@ function constants()
 function initiate()
 {
 	isDataReady = false;
+	requests = [];
 	sendXMLRequest(CONSTANTS.HOME_URL, CONSTANTS.LANGUAGES_REQUEST, null);
 	setTimeout(initiate, getRefreshInterval());
 }
@@ -79,9 +83,10 @@ function sendXMLRequest(url, requestType, languageName, responseHandler)
 	request.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
 	request.onreadystatechange = getResponseHandler(request, requestType, languageName, handleXMLRequestResponse);
 	request.send();
+	requests.push(request);
 }
 
-function handleXMLRequestResponse(requestType, languageName, responseText)
+function handleXMLRequestResponse(request, requestType, languageName, responseText)
 {
 	if(requestType == CONSTANTS.LANGUAGES_REQUEST)
 	{
@@ -104,7 +109,7 @@ function handleXMLRequestResponse(requestType, languageName, responseText)
 			newMoviesCnt[i] = 0;
 			getMovieTitlesForLanguage(backgroundObject.ContentManager.getLanguagesData()[i]);
 		}
-		setTimeout(fireNotification, 1000);
+		setTimeout(updateCompleted, 1000);
 	}
 	else if(requestType == CONSTANTS.MOVIES_REQUEST)
 	{	
@@ -128,8 +133,8 @@ function handleXMLRequestResponse(requestType, languageName, responseText)
 		}
 		backgroundObject.ContentManager.setMoviesData(capitaliseFirstLetter(languageName), movieObjArray);
 		updateNumberOfNewMovies(languageName, movieObjArray);
-		lastUpdated = new Date().getTime();
 	}
+	requests.splice(requests.indexOf(request),1);
 }
 
 function getResponseHandler(req, requestType, languageName, responseHandler)
@@ -140,8 +145,12 @@ function getResponseHandler(req, requestType, languageName, responseHandler)
 		{
 			if(responseHandler)
 			{
-				responseHandler(requestType, languageName, req.responseText);
+				responseHandler(req, requestType, languageName, req.responseText);
 			}
+		}
+		else if(req.status == 0 || req.status >= 400)
+		{
+			requests.splice(requests.indexOf(req),1);
 		}
 	}
 }
@@ -213,17 +222,18 @@ function compareNewDataAgainstCookie(language, moviesCookie)
 	langsChecked[languageIndex] = 1;
 }
 
-function fireNotification()
+function updateCompleted()
 {
 	if(sumUpArray(langsChecked) == backgroundObject.ContentManager.getLanguagesData().length)
 	{
 		isDataReady = true;
+		lastUpdated = new Date().getTime();
 		sendMessage(CONSTANTS.INITIATED);
 		setBadge();
 	}
 	else
 	{
-		setTimeout(fireNotification, 1000);
+		setTimeout(updateCompleted, 1000);
 	}
 }
 
@@ -302,8 +312,7 @@ function setBadge()
 	}
 	else
 	{
-		chrome.browserAction.setBadgeText({"text":"".toString()});//248,148,6
-		chrome.browserAction.setBadgeBackgroundColor({"color":[128,0,0,0]});		
+		chrome.browserAction.setBadgeText({"text":"".toString()});		
 	}
 }
 
@@ -311,8 +320,7 @@ function sendMessage(msgType)
 {
 	var msgObject = new Object();
 	msgObject.messageType = msgType;
-	chrome.extension.sendRequest(msgObject, function(response){
-	});
+	chrome.extension.sendRequest(msgObject, function(response){});
 }
 
 chrome.extension.onRequest.addListener(
@@ -328,6 +336,18 @@ chrome.extension.onRequest.addListener(
 		if(request.messageType == CONSTANTS.INITIATE_AGAIN)
 		{
 			initiate();
+		}
+		if(request.messageType == CONSTANTS.IS_DATA_READY_QUERY)
+		{
+			sendResponse({messageType: CONSTANTS.IS_DATA_READY_RESPONSE, status: isDataReady});
+			if(!isDataReady && lastUpdated != -1 && requests.length == 0)
+			{
+				var diff = new Date().getTime() - lastUpdated;
+				if(diff >= getRefreshInterval())
+				{
+					initiate();
+				}	
+			}
 		}	
 	});
 
@@ -382,10 +402,6 @@ function ContentManager()
 	contentObject.setNewFlag = function(language, index)
 	{
 		this.movies[this.getLanguageIndex(language)][index] = true;
-	}
-	contentObject.isMovieNew = function(movieTitle)
-	{
-		//Implement later
 	}
 	contentObject.resetNewFlags = function(language)
 	{

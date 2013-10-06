@@ -222,7 +222,7 @@ input#timeValue
 p.lastUpdated
 {
   text-align:center;
-  font-size:10px;
+  font-size:11px;
 }
 
 p.lastUpdatedError
@@ -340,4 +340,14 @@ div#searchDiv
     -webkit-animation-duration: 1.5s; 
     -webkit-animation-iteration-count: infinite;
     -webkit-animation-timing-function: linear;
+}
+
+a
+{
+  color: rgb(128,0,0);
+}
+
+a:hover
+{
+  color: rgb(200,0,0);
 }
