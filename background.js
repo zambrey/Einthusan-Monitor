@@ -17,7 +17,19 @@ var backgroundObject = null,
 		backgroundObject = new BackgroundObject();
 	if(!CONSTANTS)
 		CONSTANTS = new constants();
-	setTimeout(initiate,8000);
+	chrome.cookies.getAllCookieStores(confirmCookieStoreAccess);
+}
+
+function confirmCookieStoreAccess(cstores)
+{
+	if(cstores.length > 0)
+	{
+		initiate();
+	}
+	else
+	{
+		setTimeout(function(){chrome.cookies.getAllCookieStores(confirmCookieStoreAccess);},2000);
+	}
 }
 
 function BackgroundObject()
@@ -109,7 +121,6 @@ function handleXMLRequestResponse(request, requestType, languageName, responseTe
 			newMoviesCnt[i] = 0;
 			getMovieTitlesForLanguage(backgroundObject.ContentManager.getLanguagesData()[i]);
 		}
-		setTimeout(updateCompleted, 1000);
 	}
 	else if(requestType == CONSTANTS.MOVIES_REQUEST)
 	{	
@@ -135,6 +146,10 @@ function handleXMLRequestResponse(request, requestType, languageName, responseTe
 		updateNumberOfNewMovies(languageName, movieObjArray);
 	}
 	requests.splice(requests.indexOf(request),1);
+	if(requests.length == 0)
+	{
+		updateCompleted();
+	}
 }
 
 function getResponseHandler(req, requestType, languageName, responseHandler)
@@ -226,6 +241,7 @@ function updateCompleted()
 {
 	if(sumUpArray(langsChecked) == backgroundObject.ContentManager.getLanguagesData().length)
 	{
+		
 		isDataReady = true;
 		lastUpdated = new Date().getTime();
 		sendMessage(CONSTANTS.INITIATED);
@@ -494,7 +510,7 @@ function CookieManager()
 				oldMovieTitles.push(oldMovies[i]);
 			}
 		}
-		return oldMovieTitles;
+		return decodeURIComponent(oldMovieTitles);
 	}
 	cookieObject.processBeforeSettingCookie = function(cookieValue)
 	{
@@ -507,7 +523,7 @@ function CookieManager()
 				cookieString = cookieString.concat('--');
 			}
 		}
-		return cookieString;
+		return encodeURIComponent(cookieString);
 	}
 	return cookieObject;
 }
