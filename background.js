@@ -104,11 +104,12 @@ function handleXMLRequestResponse(request, requestType, languageName, responseTe
 	{
 		var doc = document.implementation.createHTMLDocument("languages"),langs;
 		doc.documentElement.innerHTML = responseText;
-		langs = doc.getElementsByTagName('li');
+		var langsNav = doc.getElementById("jumptolang");
+		langs = langsNav.getElementsByTagName('li');
 		backgroundObject.ContentManager.resetLanguages();
 		for(i=0; i<langs.length; i++)
 		{
-			langName = langs[i].firstChild.innerHTML;
+			langName = langs[i].firstChild.innerHTML.split(' ')[0];
 			backgroundObject.ContentManager.addLanguage(langName);
 		}
 		backgroundObject.ContentManager.resetMovies();
