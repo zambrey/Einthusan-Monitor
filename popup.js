@@ -68,7 +68,7 @@ function PopupRenderManager()
 		popupObject.PopupRenderManager.hideProgressIndicator();
 		if(!backgroundPage)
 		{
-			backgroundPage = chrome.extension.getBackgroundPage();	
+			backgroundPage = chrome.extension.getBackgroundPage();
 		}
 		languages = backgroundPage.backgroundObject.ContentManager.getLanguagesData();
 		popupObject.PopupRenderManager.renderLanguageControls(languages);
@@ -161,7 +161,7 @@ function PopupRenderManager()
 		badge = document.createElement('span');
 		badge.setAttribute('class','badge badge-warning');
 		badge.setAttribute('style','position:absolute; top:25px;');
-		badge.innerText = newMoviesNumber;	
+		badge.innerText = newMoviesNumber;
 		control.appendChild(badge);
 	}
 	renderObject.renderMovieItems = function(movieItemsSource)
@@ -201,7 +201,7 @@ function PopupRenderManager()
 		for(i=0; i<movieObjects.length; i++)
 		{
 			popupObject.PopupRenderManager.addMovieItemToRenderedList(movieObjects[i]);
-		} 
+		}
 		titleTable.style.opacity = 1.0;
 		if(movieItemsSource == "latest")
 		{
@@ -209,10 +209,10 @@ function PopupRenderManager()
 			if(language)
 			{
 				if(backgroundPage.newMoviesCnt[backgroundPage.backgroundObject.ContentManager.getLanguageIndex(language)]>0)
-				{	
-					backgroundPage.backgroundObject.CookieManager.setCookie(language.toLowerCase(),popupObject.PopupRenderManager.dataSource);
+				{
+					backgroundPage.backgroundObject.LocalStorageManager.setLocalStorageValueForKey(language.toLowerCase()+"Movies",backgroundPage.backgroundObject.LocalStorageManager.processBeforeSettingData(popupObject.PopupRenderManager.dataSource));
 					sendMessage(backgroundPage.CONSTANTS.RESET_NEW_FLAGS, language);
-				}	
+				}
 			}
 		}
 	}
@@ -318,7 +318,7 @@ function PopupRenderManager()
 		var pi = document.getElementById('progressIndicatorDiv');
 		if(pi)
 		{
-			pi.style.display = 'none';	
+			pi.style.display = 'none';
 		}
 	}
 	renderObject.showProgressIndicator = function()
@@ -373,7 +373,7 @@ function PopupInteractionManager()
 			$("#searchLang").val(popupObject.PopupRenderManager.selectedLanguage.toLowerCase());
 			$("#searchTerm").css('color','#BBBBBB');
 			$(".icon-search").css('opacity','0');
-			$("#searchTerm").trigger("focus");	
+			$("#searchTerm").trigger("focus");
 		});
 		$("#removeTopBar").click(function(){
 			$('#searchDiv').css('top','-36px');
@@ -393,16 +393,16 @@ function PopupInteractionManager()
 			}
 		});
 		$("#submitSearch").click(function(){
-			
+
 		});
 		$("#searchForm").submit( function (event) {
-		  popupObject.SearchManager.initiateSearch();    
+		  popupObject.SearchManager.initiateSearch();
           event.preventDefault();
           if($("#searchTerm").val() == "Search "+popupObject.PopupRenderManager.selectedLanguage+" Movies")
           {
           	$("#searchTerm").val("");
           }
-          popupObject.SearchManager.sendSearchRequest("1"); 
+          popupObject.SearchManager.sendSearchRequest("1");
         });
         $("#dismissAlertBox").click(function()
         {
@@ -423,7 +423,7 @@ function PopupInteractionManager()
 			$("#toolsPanel").css('opacity','0');
 			$(".icon-cog").css('opacity','1');
 			if($("#infoPanel").css('opacity') == '1')
-				$("#dismissInfoPanel").trigger("click");		
+				$("#dismissInfoPanel").trigger("click");
 		});
 		$(".icon-info-sign").click(function()
 		{
@@ -431,7 +431,7 @@ function PopupInteractionManager()
 			if($("#infoPanel").css('opacity') == '0')
 			{
 				$("#infoPanel").css('opacity','1');
-				$("#infoPanel").css('left','0');	
+				$("#infoPanel").css('left','0');
 			}
 			else
 			{
@@ -448,7 +448,7 @@ function PopupInteractionManager()
 			$(".icon-info-sign").toggleClass('icon-white');
 			$("#infoPanel").css('opacity','0');
 			$("#infoPanel").css('left','-362px');
-		}); 
+		});
 		$("#feedback").click(function()
 		{
 			chrome.tabs.create({"url":$("#feedback").attr('href')},function(){});
@@ -463,14 +463,14 @@ function PopupInteractionManager()
 			{
 				popupObject.PopupRenderManager.viewStyle = backgroundPage.CONSTANTS.TILE_VIEW_STYLE;
 				backgroundPage.backgroundObject.PreferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.VIEW_STYLE_PREF, backgroundPage.CONSTANTS.TILE_VIEW_STYLE);
-				popupObject.PopupRenderManager.switchViewStyle();	
+				popupObject.PopupRenderManager.switchViewStyle();
 			}
-			
+
 		})
 		$("#listView").click(function()
 		{
 			if(popupObject.PopupRenderManager.viewStyle != backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
-			{	
+			{
 				popupObject.PopupRenderManager.viewStyle = backgroundPage.CONSTANTS.LIST_VIEW_STYLE;
 				backgroundPage.backgroundObject.PreferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.VIEW_STYLE_PREF, backgroundPage.CONSTANTS.LIST_VIEW_STYLE);
 				popupObject.PopupRenderManager.switchViewStyle();
@@ -506,7 +506,7 @@ function SearchManager()
 	{
 		$("#searchPage").val(page);
 		var request = $.post(this.searchUrl, $("#searchForm").serialize(), function(data,textStatus, xhr){
-	
+
               	popupObject.SearchManager.processSearchResponse(data, xhr);
             }
           ).fail(function(jqXHR, textStatus, errorThrown){
@@ -555,7 +555,7 @@ function SearchManager()
 			var mo = popupObject.SearchManager.MovieObject(data.movie_id, data.movie, data.language, data.cover, this.collateMovieDetails(data));
 			popupObject.PopupRenderManager.dataSource.push(mo);
 
-			popupObject.PopupRenderManager.addMovieItemToRenderedList(mo);	
+			popupObject.PopupRenderManager.addMovieItemToRenderedList(mo);
 		}
 	}
 	searchObject.collateMovieDetails = function(data)

@@ -3,48 +3,37 @@
  * Ameya Zambre
  * ameyazambre@gmail.com
  */
-var backgroundObject = null,
-	CONSTANTS = null,
-	newMoviesCnt,
-	langsChecked,
-	isDataReady = false,
-	lastUpdated = -1,
-	requests,
-	REFRESH_INTERVAL = 3*60*60*1000; //Three hour
+ var backgroundObject = null,
+	 CONSTANTS = null,
+	 newMoviesCnt,
+	 langsChecked,
+	 isDataReady = false,
+	 lastUpdated = -1,
+	 requests,
+	 REFRESH_INTERVAL = 3*60*60*1000; //Three hour
 
-{
-	if(!backgroundObject)
-		backgroundObject = new BackgroundObject();
-	if(!CONSTANTS)
-		CONSTANTS = new constants();
-	chrome.cookies.getAllCookieStores(confirmCookieStoreAccess);
-}
-
-function confirmCookieStoreAccess(cstores)
-{
-	if(cstores.length > 0)
 	{
+		if(!backgroundObject)
+			backgroundObject = new BackgroundObject();
+		if(!CONSTANTS)
+			CONSTANTS = new constants();
 		initiate();
 	}
-	else
+
+	function BackgroundObject()
 	{
-		setTimeout(function(){chrome.cookies.getAllCookieStores(confirmCookieStoreAccess);},2000);
+		var object = new Object();
+		object.ContentManager = new ContentManager();
+		object.PreferencesManager = new PreferencesManager();
+		object.CookieManager = new CookieManager();
+		object.LocalStorageManager = new LocalStorageManager();
+		return object;
 	}
-}
 
-function BackgroundObject()
-{
-	var object = new Object();
-	object.ContentManager = new ContentManager();
-	object.PreferencesManager = new PreferencesManager();
-	object.CookieManager = new CookieManager();
-	return object;
-}
+	function constants()
+	{
+		var object = new Object();
 
-function constants()
-{
-	var object = new Object();
-	
 	//CONSTANT VALUES
 	object.HOME_URL = "http://www.einthusan.com/";
 	object.QUERY_PATH = "index.php?lang=";
@@ -81,6 +70,7 @@ function initiate()
 	requests = [];
 	sendXMLRequest(CONSTANTS.HOME_URL, CONSTANTS.LANGUAGES_REQUEST, null);
 	setTimeout(initiate, getRefreshInterval());
+	backgroundObject.PreferencesManager.transitionPreferencesToChromeStorage();
 }
 
 function getMovieTitlesForLanguage(languageName)
@@ -122,13 +112,15 @@ function handleXMLRequestResponse(request, requestType, languageName, responseTe
 			newMoviesCnt[i] = 0;
 			getMovieTitlesForLanguage(backgroundObject.ContentManager.getLanguagesData()[i]);
 		}
+		//This call is to remove cookie from user's systems. Can be removed in next version.
+		backgroundObject.CookieManager.clearCookies();
 	}
 	else if(requestType == CONSTANTS.MOVIES_REQUEST)
-	{	
-		var	movieObjArray, 
-			movieElems, 
-			movieCovers,
-			movieDetails;
+	{
+		var	movieObjArray,
+		movieElems,
+		movieCovers,
+		movieDetails;
 		doc= document.implementation.createHTMLDocument("movies");
 		doc.documentElement.innerHTML = responseText;
 		movieObjArray = new Array();
@@ -139,9 +131,9 @@ function handleXMLRequestResponse(request, requestType, languageName, responseTe
 		{
 			movieDetails[i].removeChild(movieDetails[i].childNodes[1]);
 			movieObjArray.push(new MovieObject(	movieElems[i].innerHTML.split(' - ')[0],
-												movieCovers[i].firstChild.getAttribute('src'),
-												"Starring "+movieDetails[i].innerText.substring(3),
-												movieCovers[i].getAttribute('href')));
+				movieCovers[i].firstChild.getAttribute('src'),
+				"Starring "+movieDetails[i].innerText.substring(3),
+				movieCovers[i].getAttribute('href')));
 		}
 		backgroundObject.ContentManager.setMoviesData(capitaliseFirstLetter(languageName), movieObjArray);
 		updateNumberOfNewMovies(languageName, movieObjArray);
@@ -171,32 +163,6 @@ function getResponseHandler(req, requestType, languageName, responseHandler)
 	}
 }
 
-function breakCookieString(cookieString)
-{
-	var oldMovieTitles,oldMovies;
-	if(cookieString)
-	{
-		oldMovieTitles = new Array()
-		oldMovies = cookieString.split('--');
-		for(i=0; i<oldMovies.length; i++)
-		{
-			oldMovieTitles.push(oldMovies[i]);
-		}
-	}
-	return oldMovieTitles;
-}
-
-function getCookie(languageName)
-{
-	var details = new Object(), oldMovieTitles;
-	details.url = homeUrl;
-	details.name = languageName.toLowerCase()+'Movies';
-	chrome.cookies.get(details, function(cookie){
-		oldMovieTitles = breakCookieString(cookie.value);
-	});
-	return oldMovieTitles;
-}
-
 function updateNumberOfNewMovies(languageName, movieObjArray)
 {
 	var moviesCookie = null,
@@ -204,12 +170,15 @@ function updateNumberOfNewMovies(languageName, movieObjArray)
 		languageIndex = backgroundObject.ContentManager.getLanguageIndex(languageName);
 	details.url = CONSTANTS.HOME_URL;
 	details.name = languageName.toLowerCase()+'Movies';
-	backgroundObject.CookieManager.getCookie(languageName, compareNewDataAgainstCookie);
+	backgroundObject.LocalStorageManager.getLocalStorageValueForKey(details.name, compareNewDataAgainstStoredData);
 }
 
-function compareNewDataAgainstCookie(language, moviesCookie)
+function compareNewDataAgainstStoredData(keyAndData)
 {
-	var languageIndex = backgroundObject.ContentManager.getLanguageIndex(language),
+	var language = keyAndData['key'].substring(0,keyAndData['key'].indexOf("Movies")),
+		language = language.substring(0,1).toUpperCase() + language.substring(1),
+		moviesCookie = keyAndData['data'],
+		languageIndex = backgroundObject.ContentManager.getLanguageIndex(language),
 		movieObjArray = backgroundObject.ContentManager.getMoviesData(language);
 	if(!moviesCookie)
 	{
@@ -233,7 +202,7 @@ function compareNewDataAgainstCookie(language, moviesCookie)
 			{
 				break;
 			}
-		}	
+		}
 	}
 	langsChecked[languageIndex] = 1;
 }
@@ -242,7 +211,7 @@ function updateCompleted()
 {
 	if(sumUpArray(langsChecked) == backgroundObject.ContentManager.getLanguagesData().length)
 	{
-		
+
 		isDataReady = true;
 		lastUpdated = new Date().getTime();
 		sendMessage(CONSTANTS.INITIATED);
@@ -273,8 +242,8 @@ function sumUpArray(arr)
 function getRefreshInterval()
 {
 	var refreshTimeVal = parseInt(backgroundObject.PreferencesManager.getPreferenceValue(CONSTANTS.REFRESH_TIME_VAL_PREF)),
-		refreshTimeUnit = backgroundObject.PreferencesManager.getPreferenceValue(CONSTANTS.REFRESH_TIME_UNIT_PREF),
-		refreshInterval = 0;
+	refreshTimeUnit = backgroundObject.PreferencesManager.getPreferenceValue(CONSTANTS.REFRESH_TIME_UNIT_PREF),
+	refreshInterval = 0;
 	if(!refreshTimeVal || !refreshTimeUnit)
 	{
 		refreshInterval = REFRESH_INTERVAL;
@@ -292,8 +261,8 @@ function getRefreshInterval()
 		{
 			refreshInterval = refreshInterval * 60 * 60;
 		}
-	} 
-	return refreshInterval;	
+	}
+	return refreshInterval;
 }
 
 function MovieObject(title, coverSrc, details, watchURL)
@@ -310,7 +279,7 @@ function MovieObject(title, coverSrc, details, watchURL)
 function resetNewFlags(language)
 {
 	var index = backgroundObject.ContentManager.getLanguagesData().indexOf(language),
-		movieList = backgroundObject.ContentManager.getMoviesData(language);
+	movieList = backgroundObject.ContentManager.getMoviesData(language);
 	newMoviesCnt[index] = 0;
 	for(i=0; i<movieList.length; i++)
 	{
@@ -325,11 +294,11 @@ function setBadge()
 	if(badgeNumber > 0)
 	{
 		chrome.browserAction.setBadgeText({"text":badgeNumber.toString()});//248,148,6
-		chrome.browserAction.setBadgeBackgroundColor({"color":[248,148,6,200]});	
+		chrome.browserAction.setBadgeBackgroundColor({"color":[248,148,6,200]});
 	}
 	else
 	{
-		chrome.browserAction.setBadgeText({"text":"".toString()});		
+		chrome.browserAction.setBadgeText({"text":"".toString()});
 	}
 }
 
@@ -363,9 +332,9 @@ chrome.extension.onRequest.addListener(
 				if(diff >= getRefreshInterval())
 				{
 					initiate();
-				}	
+				}
 			}
-		}	
+		}
 	});
 
 
@@ -397,7 +366,7 @@ function ContentManager()
 		return this.languages;
 	}
 	contentObject.getMoviesData = function(language)
-	{	
+	{
 		return this.movies[this.getLanguageIndex(language)];
 	}
 	contentObject.getAllMoviesData = function()
@@ -422,7 +391,7 @@ function ContentManager()
 	}
 	contentObject.resetNewFlags = function(language)
 	{
-		//Implement later	
+		//Implement later
 	}
 	return contentObject;
 }
@@ -430,20 +399,19 @@ function ContentManager()
 /*Preferences Manager*/
 function PreferencesManager()
 {
-	var prefObject =  new Object();
-	prefObject.DEFAULT_LANGUAGE_KEY = "defaultLanguage";
-	prefObject.REFRESH_TIME_VALUE_KEY = "refreshTimeVal";
-	prefObject.REFRESH_TIME_UNIT_KEY = "refreshTimeUnit";
-	prefObject.VIEW_STYLE_KEY = "viewStyle";
-	prefObject.getPreferenceValue = function(preferenceType)
-	{	
+	this.DEFAULT_LANGUAGE_KEY = "defaultLanguage";
+	this.REFRESH_TIME_VALUE_KEY = "refreshTimeVal";
+	this.REFRESH_TIME_UNIT_KEY = "refreshTimeUnit";
+	this.VIEW_STYLE_KEY = "viewStyle";
+	this.getPreferenceValue = function(preferenceType)
+	{
 		return localStorage.getItem(this.getLocalStorageKeyForPreferenceType(preferenceType));
 	}
-	prefObject.setPreferenceValue = function(preferenceType, preferenceValue)
+	this.setPreferenceValue = function(preferenceType, preferenceValue)
 	{
 		localStorage.setItem(this.getLocalStorageKeyForPreferenceType(preferenceType),preferenceValue);
 	}
-	prefObject.getLocalStorageKeyForPreferenceType = function(preferenceType)
+	this.getLocalStorageKeyForPreferenceType = function(preferenceType)
 	{
 		var prefKey = null;
 		if(preferenceType == CONSTANTS.DEF_LANG_PREF)
@@ -464,48 +432,59 @@ function PreferencesManager()
 		}
 		return prefKey;
 	}
-	return prefObject;
+	this.transitionPreferencesToChromeStorage = function()
+	{
+		var prefs = {};
+		if(this.getPreferenceValue(CONSTANTS.DEF_LANG_PREF))
+		{
+			prefs[this.DEFAULT_LANGUAGE_KEY] = this.getPreferenceValue(CONSTANTS.DEF_LANG_PREF);
+			localStorage.removeItem(this.DEFAULT_LANGUAGE_KEY);
+		}
+		if(this.getPreferenceValue(CONSTANTS.REFRESH_TIME_VAL_PREF))
+		{
+			prefs[this.REFRESH_TIME_VALUE_KEY] = this.getPreferenceValue(CONSTANTS.REFRESH_TIME_VAL_PREF);
+			localStorage.removeItem(this.REFRESH_TIME_VALUE_KEY);
+		}
+		if(this.getPreferenceValue(CONSTANTS.REFRESH_TIME_UNIT_PREF))
+		{
+			prefs[this.REFRESH_TIME_UNIT_KEY] = this.getPreferenceValue(CONSTANTS.REFRESH_TIME_UNIT_PREF);
+			localStorage.removeItem(this.REFRESH_TIME_UNIT_KEY);
+		}
+		if(this.getPreferenceValue(CONSTANTS.VIEW_STYLE_PREF))
+		{
+			prefs[this.VIEW_STYLE_KEY] = this.getPreferenceValue(CONSTANTS.VIEW_STYLE_PREF);
+			localStorage.removeItem(this.VIEW_STYLE_KEY);
+		}
+		backgroundObject.LocalStorageManager.setLocalStorageValues(prefs);
+	}
 }
 
-/*Cookie Manager*/
-function CookieManager()
+/*Local Storage Manager*/
+function LocalStorageManager()
 {
-	var cookieObject = new Object();
-	cookieObject.cookieValidDuration = 60*60*24*30*12,
-	cookieObject.getCookie = function(language, cookieHandler)
+	this.getLocalStorageValueForKey = function(key, dataHandler)
 	{
-		var details = new Object(), oldMovieTitles = null;
-		details.url = CONSTANTS.HOME_URL;
-		details.name = language.toLowerCase()+'Movies';
-		chrome.cookies.get(details, function(cookie){
-			if(cookie)
+		var oldMovieTitles = null;
+		chrome.storage.sync.get(key, function(data){
+			if(data)
 			{
-				oldMovieTitles = backgroundObject.CookieManager.processBeforeReturningCookie(cookie.value);
+				oldMovieTitles = backgroundObject.LocalStorageManager.processBeforeReturningData(data[key]);
 			}
-			if(cookieHandler)
+			if(dataHandler)
 			{
-				cookieHandler(language, oldMovieTitles)
+				dataHandler({'key':key, 'data':oldMovieTitles})
 			}
 		});
 		return oldMovieTitles;
 	}
-	cookieObject.setCookie = function(language, cookieValue)
-	{
-		var details = new Object();
-		details.url = CONSTANTS.HOME_URL;
-		details.name = language.toLowerCase()+'Movies';
-		details.value = this.processBeforeSettingCookie(cookieValue);
-		details.expirationDate = (new Date().getTime()/1000) + this.cookieValidDuration;
-		chrome.cookies.remove({"url":CONSTANTS.HOME_URL,"name":details.name});
-		chrome.cookies.set(details);
-	}
-	cookieObject.processBeforeReturningCookie = function(cookieString)
+
+	this.processBeforeReturningData = function(dataValue)
 	{
 		var oldMovieTitles,oldMovies;
-		if(cookieString)
+		if(dataValue)
 		{
 			oldMovieTitles = new Array()
-			oldMovies = cookieString.split('--');
+			oldMovies = dataValue.split('--');
 			for(i=0; i<oldMovies.length; i++)
 			{
 				oldMovieTitles.push(oldMovies[i]);
@@ -513,18 +492,43 @@ function CookieManager()
 		}
 		return decodeURIComponent(oldMovieTitles);
 	}
-	cookieObject.processBeforeSettingCookie = function(cookieValue)
+
+	this.setLocalStorageValueForKey = function(key, data)
+	{
+		var details = {};
+		details[key] = data;
+		chrome.storage.sync.set(details, null);	
+	}
+
+	this.processBeforeSettingData = function(dataObjects)
 	{
 		var cookieString = '';
-		for(i=0; i<cookieValue.length; i++)
+		for(i=0; i<dataObjects.length; i++)
 		{
-			cookieString = cookieString.concat(cookieValue[i].movieTitle);
-			if(i<cookieValue.length-1)
+			cookieString = cookieString.concat(dataObjects[i].movieTitle);
+			if(i<dataObjects.length-1)
 			{
 				cookieString = cookieString.concat('--');
 			}
 		}
 		return encodeURIComponent(cookieString);
 	}
-	return cookieObject;
+
+	this.setLocalStorageValues = function(data)
+	{
+		chrome.storage.sync.set(data, null);
+	}
+}
+
+/*Cookie Manager*/
+function CookieManager()
+{
+	this.clearCookies = function()
+	{
+		var languages = backgroundObject.ContentManager.getLanguagesData();
+		for(var i=0; i<languages.length; i++)
+		{
+			chrome.cookies.remove({'url':CONSTANTS.HOME_URL, 'name':languages[i].toLowerCase()+'Movies'},null);
+		}
+	}
 }
