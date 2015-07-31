@@ -4,17 +4,25 @@
  * ameyazambre@gmail.com
  */
 var backgroundPage = chrome.extension.getBackgroundPage(),
-	defaultLang = backgroundPage.backgroundObject.PreferencesManager.getPreferenceValue(backgroundPage.CONSTANTS.DEF_LANG_PREF),
-	timeVal = backgroundPage.backgroundObject.PreferencesManager.getPreferenceValue(backgroundPage.CONSTANTS.REFRESH_TIME_VAL_PREF),
-	timeUnit = backgroundPage.backgroundObject.PreferencesManager.getPreferenceValue(backgroundPage.CONSTANTS.REFRESH_TIME_UNIT_PREF),
+	defaultLang = null,
+	timeVal = null,
+	timeUnit = null,
 	numAttempts = 0;
 
 {
-	renderOptionsPage();
-	$("#selectedLanguage").html(defaultLang+" <span class=\"caret\"></span>");
-	$("#timeValue").val(timeVal);
-	$("#selectedTimeUnit").html(timeUnit+" <span class=\"caret\"></span>");	
-	$(".lastUpdated").text(getLastUpdatedText());
+	backgroundPage.backgroundObject.LocalStorageManager.getLocalStorageValuesInBatch([backgroundPage.backgroundObject.PreferencesManager.DEFAULT_LANGUAGE_KEY,
+																					backgroundPage.backgroundObject.PreferencesManager.REFRESH_TIME_VALUE_KEY,
+																					backgroundPage.backgroundObject.PreferencesManager.REFRESH_TIME_UNIT_KEY],
+		function(keyAndData){
+			defaultLang = keyAndData[backgroundPage.backgroundObject.PreferencesManager.DEFAULT_LANGUAGE_KEY];
+			timeVal = keyAndData[backgroundPage.backgroundObject.PreferencesManager.REFRESH_TIME_VALUE_KEY];
+			timeUnit = keyAndData[backgroundPage.backgroundObject.PreferencesManager.REFRESH_TIME_UNIT_KEY];
+			renderOptionsPage();
+			$("#selectedLanguage").html(defaultLang+" <span class=\"caret\"></span>");
+			$("#timeValue").val(timeVal);
+			$("#selectedTimeUnit").html(timeUnit+" <span class=\"caret\"></span>");	
+			$(".lastUpdated").text(getLastUpdatedText());
+		});
 }
 
 function renderOnDataReady()

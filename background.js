@@ -32,44 +32,40 @@
 
 	function constants()
 	{
-		var object = new Object();
+		//CONSTANT VALUES
+		this.HOME_URL = "http://www.einthusan.com/";
+		this.QUERY_PATH = "index.php?lang=";
+		this.LIST_VIEW_STYLE = "listView";
+		this.TILE_VIEW_STYLE = "tileView";
 
-	//CONSTANT VALUES
-	object.HOME_URL = "http://www.einthusan.com/";
-	object.QUERY_PATH = "index.php?lang=";
-	object.LIST_VIEW_STYLE = "listView";
-	object.TILE_VIEW_STYLE = "tileView";
+		//PREFERENCE RELATED CONSTANTS
+		this.DEF_LANG_PREF = "defaultLanguagePref";
+		this.REFRESH_TIME_VAL_PREF = "refreshTimeValPref";
+		this.REFRESH_TIME_UNIT_PREF = "refreshTimeUnitPref";
+		this.VIEW_STYLE_PREF = "viewStylePref";
+		this.DEFAULT_REFRESH_TIME_VALUE = "3";
+		this.DEFAULT_REFRESH_TIME_UNIT = "Hours";
+		this.DEFAULT_VIEW_STYLE = this.LIST_VIEW_STYLE;
 
-	//PREFERENCE RELATED CONSTANTS
-	object.DEF_LANG_PREF = "defaultLanguagePref";
-	object.REFRESH_TIME_VAL_PREF = "refreshTimeValPref";
-	object.REFRESH_TIME_UNIT_PREF = "refreshTimeUnitPref";
-	object.VIEW_STYLE_PREF = "viewStylePref";
-	object.DEFAULT_REFRESH_TIME_VALUE = "3";
-	object.DEFAULT_REFRESH_TIME_UNIT = "Hours";
-	object.DEFAULT_VIEW_STYLE = object.LIST_VIEW_STYLE;
+		//EXTERNAL COMMUNICATION KEYS
+		this.LANGUAGES_REQUEST = "languageRequest";
+		this.MOVIES_REQUEST = "moviesRequest";
 
-	//EXTERNAL COMMUNICATION KEYS
-	object.LANGUAGES_REQUEST = "languageRequest";
-	object.MOVIES_REQUEST = "moviesRequest";
-
-	//INTER-SCRIPT COMMUNICATION KEYS
-	object.RESET_NEW_FLAGS = "resetNewFlags";
-	object.INITIATE_AGAIN = "initiateAgain";
-	object.NEW_FLAGS_RESET_DONE = "newFlagsReset";
-	object.INITIATED = "initiated";
-	object.IS_DATA_READY_QUERY = "isDataReadyQuery";
-	object.IS_DATA_READY_RESPONSE = "isDataReadyResponse"
-
-	return object;
-}
+		//INTER-SCRIPT COMMUNICATION KEYS
+		this.RESET_NEW_FLAGS = "resetNewFlags";
+		this.INITIATE_AGAIN = "initiateAgain";
+		this.NEW_FLAGS_RESET_DONE = "newFlagsReset";
+		this.INITIATED = "initiated";
+		this.IS_DATA_READY_QUERY = "isDataReadyQuery";
+		this.IS_DATA_READY_RESPONSE = "isDataReadyResponse"
+	}
 
 function initiate()
 {
 	isDataReady = false;
 	requests = [];
 	sendXMLRequest(CONSTANTS.HOME_URL, CONSTANTS.LANGUAGES_REQUEST, null);
-	setTimeout(initiate, getRefreshInterval());
+	setTimeoutOrExecuteInitiate(null);
 	backgroundObject.PreferencesManager.transitionPreferencesToChromeStorage();
 }
 
@@ -239,30 +235,48 @@ function sumUpArray(arr)
 	return sum;
 }
 
-function getRefreshInterval()
+/*This function computes refresh interval value set by the user first.
+  If argument is non-null, it call initiate if timeElapsed > refreshInterval. Otherwise it sets up timout call for initiate.*/
+function setTimeoutOrExecuteInitiate(timeLapsedAfterLastUpdate)
 {
-	var refreshTimeVal = parseInt(backgroundObject.PreferencesManager.getPreferenceValue(CONSTANTS.REFRESH_TIME_VAL_PREF)),
-	refreshTimeUnit = backgroundObject.PreferencesManager.getPreferenceValue(CONSTANTS.REFRESH_TIME_UNIT_PREF),
-	refreshInterval = 0;
-	if(!refreshTimeVal || !refreshTimeUnit)
-	{
-		refreshInterval = REFRESH_INTERVAL;
-		backgroundObject.PreferencesManager.setPreferenceValue(CONSTANTS.REFRESH_TIME_VAL_PREF, CONSTANTS.DEFAULT_REFRESH_TIME_VALUE);
-		backgroundObject.PreferencesManager.setPreferenceValue(CONSTANTS.REFRESH_TIME_UNIT_PREF, CONSTANTS.DEFAULT_REFRESH_TIME_UNIT);
-	}
-	else
-	{
-		refreshInterval = refreshTimeVal * 1000;
-		if(refreshTimeUnit == "Minutes")
+	backgroundObject.LocalStorageManager.getLocalStorageValuesInBatch([backgroundObject.PreferencesManager.REFRESH_TIME_VALUE_KEY,backgroundObject.PreferencesManager.REFRESH_TIME_UNIT_KEY],
+		function(keysAndData)
 		{
-			refreshInterval = refreshInterval * 60;
-		}
-		if(refreshTimeUnit == "Hours")
-		{
-			refreshInterval = refreshInterval * 60 * 60;
-		}
-	}
-	return refreshInterval;
+			var refreshTimeVal = parseInt(keysAndData[backgroundObject.PreferencesManager.REFRESH_TIME_VALUE_KEY]),
+				refreshTimeUnit = keysAndData[backgroundObject.PreferencesManager.REFRESH_TIME_UNIT_KEY],
+				refreshInterval = 0;
+			if(!refreshTimeVal || !refreshTimeUnit)
+			{
+				refreshInterval = REFRESH_INTERVAL;
+				var defPrefs = {};
+				defPrefs[CONSTANTS.REFRESH_TIME_VALUE_KEY] = CONSTANTS.DEFAULT_REFRESH_TIME_VALUE;
+				defPrefs[CONSTANTS.REFRESH_TIME_UNIT_KEY] = CONSTANTS.DEFAULT_REFRESH_TIME_UNIT;
+				backgroundObject.LocalStorageManager.setLocalStorageValuesInBatch(defPrefs);
+			}
+			else
+			{
+				refreshInterval = refreshTimeVal * 1000;
+				if(refreshTimeUnit == "Minutes")
+				{
+					refreshInterval = refreshInterval * 60;
+				}
+				if(refreshTimeUnit == "Hours")
+				{
+					refreshInterval = refreshInterval * 60 * 60;
+				}
+			}
+			if(timeLapsedAfterLastUpdate!=null)
+			{
+				if(timeLapsedAfterLastUpdate >= refreshInterval)
+				{
+					initiate();
+				}
+			}
+			else
+			{
+				setTimeout(initiate, refreshInterval);
+			}
+		});
 }
 
 function MovieObject(title, coverSrc, details, watchURL)
@@ -329,10 +343,7 @@ chrome.extension.onRequest.addListener(
 			if(!isDataReady && lastUpdated != -1 && requests.length == 0)
 			{
 				var diff = new Date().getTime() - lastUpdated;
-				if(diff >= getRefreshInterval())
-				{
-					initiate();
-				}
+				setTimeoutOrExecuteInitiate(diff);
 			}
 		}
 	});
@@ -407,9 +418,14 @@ function PreferencesManager()
 	{
 		return localStorage.getItem(this.getLocalStorageKeyForPreferenceType(preferenceType));
 	}
+	this.getPreferenceValueAsync = function(preferenceType, preferenceHandler)
+	{
+		backgroundObject.LocalStorageManager.getLocalStorageValueForKey(this.getLocalStorageKeyForPreferenceType(preferenceType), preferenceHandler);
+	}
 	this.setPreferenceValue = function(preferenceType, preferenceValue)
 	{
-		localStorage.setItem(this.getLocalStorageKeyForPreferenceType(preferenceType),preferenceValue);
+		//localStorage.setItem(this.getLocalStorageKeyForPreferenceType(preferenceType),preferenceValue);
+		backgroundObject.LocalStorageManager.setLocalStorageValueForKey(this.getLocalStorageKeyForPreferenceType(preferenceType),preferenceValue);
 	}
 	this.getLocalStorageKeyForPreferenceType = function(preferenceType)
 	{
@@ -434,28 +450,33 @@ function PreferencesManager()
 	}
 	this.transitionPreferencesToChromeStorage = function()
 	{
-		var prefs = {};
-		if(this.getPreferenceValue(CONSTANTS.DEF_LANG_PREF))
+		var prefs = {},
+			defLang = this.getPreferenceValue(CONSTANTS.DEF_LANG_PREF),
+			timeVal = this.getPreferenceValue(CONSTANTS.REFRESH_TIME_VAL_PREF),
+			timeUnit = this.getPreferenceValue(CONSTANTS.VIEW_STYLE_PREF),
+			viewStyle = this.getPreferenceValue(CONSTANTS.VIEW_STYLE_PREF);
+
+		if(defLang)
 		{
-			prefs[this.DEFAULT_LANGUAGE_KEY] = this.getPreferenceValue(CONSTANTS.DEF_LANG_PREF);
+			prefs[this.DEFAULT_LANGUAGE_KEY] = defLang;
 			localStorage.removeItem(this.DEFAULT_LANGUAGE_KEY);
 		}
-		if(this.getPreferenceValue(CONSTANTS.REFRESH_TIME_VAL_PREF))
+		if(timeVal)
 		{
-			prefs[this.REFRESH_TIME_VALUE_KEY] = this.getPreferenceValue(CONSTANTS.REFRESH_TIME_VAL_PREF);
+			prefs[this.REFRESH_TIME_VALUE_KEY] = timeVal;
 			localStorage.removeItem(this.REFRESH_TIME_VALUE_KEY);
 		}
-		if(this.getPreferenceValue(CONSTANTS.REFRESH_TIME_UNIT_PREF))
+		if(timeUnit)
 		{
-			prefs[this.REFRESH_TIME_UNIT_KEY] = this.getPreferenceValue(CONSTANTS.REFRESH_TIME_UNIT_PREF);
+			prefs[this.REFRESH_TIME_UNIT_KEY] = timeUnit;
 			localStorage.removeItem(this.REFRESH_TIME_UNIT_KEY);
 		}
-		if(this.getPreferenceValue(CONSTANTS.VIEW_STYLE_PREF))
+		if(viewStyle)
 		{
-			prefs[this.VIEW_STYLE_KEY] = this.getPreferenceValue(CONSTANTS.VIEW_STYLE_PREF);
+			prefs[this.VIEW_STYLE_KEY] = viewStyle;
 			localStorage.removeItem(this.VIEW_STYLE_KEY);
 		}
-		backgroundObject.LocalStorageManager.setLocalStorageValues(prefs);
+		backgroundObject.LocalStorageManager.setLocalStorageValuesInBatch(prefs);
 	}
 }
 
@@ -466,16 +487,20 @@ function LocalStorageManager()
 	{
 		var oldMovieTitles = null;
 		chrome.storage.sync.get(key, function(data){
-			if(data)
+			if(data && key.indexOf('Movies')>=0)
 			{
 				oldMovieTitles = backgroundObject.LocalStorageManager.processBeforeReturningData(data[key]);
+				data = oldMovieTitles;
+			}
+			else
+			{
+				data = data[key];
 			}
 			if(dataHandler)
 			{
-				dataHandler({'key':key, 'data':oldMovieTitles})
+				dataHandler({'key':key, 'data':data})
 			}
 		});
-		return oldMovieTitles;
 	}
 
 	this.processBeforeReturningData = function(dataValue)
@@ -491,6 +516,15 @@ function LocalStorageManager()
 			}
 		}
 		return decodeURIComponent(oldMovieTitles);
+	}
+
+	//keys: Array of keys
+	this.getLocalStorageValuesInBatch = function(keys, dataHandler)
+	{
+		chrome.storage.sync.get(keys, function(data)
+		{
+			dataHandler(data);
+		})
 	}
 
 	this.setLocalStorageValueForKey = function(key, data)
@@ -514,7 +548,8 @@ function LocalStorageManager()
 		return encodeURIComponent(cookieString);
 	}
 
-	this.setLocalStorageValues = function(data)
+	//data: Object with key-value pairs
+	this.setLocalStorageValuesInBatch = function(data)
 	{
 		chrome.storage.sync.set(data, null);
 	}

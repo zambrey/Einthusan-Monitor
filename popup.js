@@ -50,7 +50,16 @@ function sendMessage(msgType, languageName)
 function PopupRenderManager()
 {
 	var renderObject = new Object();
-	renderObject.viewStyle = backgroundPage.backgroundObject.PreferencesManager.getPreferenceValue(backgroundPage.CONSTANTS.VIEW_STYLE_PREF);
+	backgroundPage.backgroundObject.PreferencesManager.getPreferenceValueAsync(backgroundPage.CONSTANTS.VIEW_STYLE_PREF, 
+		function(keyAndData)
+		{
+			renderObject.viewStyle = keyAndData['data'];
+		});
+	backgroundPage.backgroundObject.PreferencesManager.getPreferenceValueAsync(backgroundPage.CONSTANTS.DEF_LANG_PREF, 
+		function(keyAndData)
+		{
+			renderObject.startLanguage = keyAndData['data'];
+		});
 	renderObject.listViewHolder = document.getElementById('movieTitlesList').childNodes[0];
 	renderObject.tileViewHolder = document.getElementById('movieTitlesTiles');
 	renderObject.usedHolder = null;
@@ -72,7 +81,8 @@ function PopupRenderManager()
 		}
 		languages = backgroundPage.backgroundObject.ContentManager.getLanguagesData();
 		popupObject.PopupRenderManager.renderLanguageControls(languages);
-		startLang = backgroundPage.backgroundObject.PreferencesManager.getPreferenceValue(backgroundPage.CONSTANTS.DEF_LANG_PREF);
+		startLang = popupObject.PopupRenderManager.startLanguage;
+		console.log(startLang);
 		if(!startLang)
 		{
 			startLang = languages[0];
