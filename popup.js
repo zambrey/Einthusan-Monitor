@@ -4,7 +4,8 @@
  * ameyazambre@gmail.com
  */
 var backgroundPage = chrome.extension.getBackgroundPage(),
-	popupObject = new PopupObject();
+	popupObject = new PopupObject(),
+	castManager = new CastManager();
 
 {
 	setTimeout(popupObject.PopupRenderManager.initRender, 50);
@@ -82,7 +83,6 @@ function PopupRenderManager()
 		languages = backgroundPage.backgroundObject.ContentManager.getLanguagesData();
 		popupObject.PopupRenderManager.renderLanguageControls(languages);
 		startLang = popupObject.PopupRenderManager.startLanguage;
-		console.log(startLang);
 		if(!startLang)
 		{
 			startLang = languages[0];
@@ -486,6 +486,13 @@ function PopupInteractionManager()
 				popupObject.PopupRenderManager.switchViewStyle();
 			}
 		})
+		$("#castIcon").click(function()
+		{
+			if(castManager)
+			{
+				castManager.initializeSession();
+			}
+		})
 	}
 	return interactionObject;
 }
@@ -601,4 +608,70 @@ function SearchManager()
 		return mo;
 	}
 	return searchObject;
+}
+
+/*Chromecast support*/
+window['__onGCastApiAvailable'] = function(loaded, errorInfo) {
+  if (loaded) 
+  {
+    castManager.initializeCastAPI();
+  } 
+  else 
+  {
+    console.log(errorInfo);
+  }
+}
+
+function CastManager()
+{
+}
+
+CastManager.prototype.sessionListener = function(e)
+{
+	console.log("Session Listener");
+}
+
+CastManager.prototype.receiverListener = function(e)
+{
+	if(e === chrome.cast.ReceiverAvailability.AVAILABLE)
+	{
+		console.log("Receivers are available.");
+		//Show cast button
+	}
+	else
+	{
+		//Don't show cast button
+	}
+}
+
+CastManager.prototype.onAPIInitSuccess = function()
+{
+	console.log("Cast API initialized successfully.");
+}
+
+CastManager.prototype.onAPIInitError = function()
+{
+	console.log("Cast API initialization failed.");
+}
+
+CastManager.prototype.initializeCastAPI = function(e)
+{
+	var sessionRequest = new chrome.cast.SessionRequest(chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID),
+		apiConfig = new chrome.cast.ApiConfig(sessionRequest,this.sessionListener,this.receiverListener);
+	chrome.cast.initialize(apiConfig, this.onAPIInitSuccess, this.onAPIInitError);
+}
+
+CastManager.prototype.initializeSession = function()
+{
+	chrome.cast.requestSession(this.onRequestSessionSuccess, this.onLaunchError);
+}
+
+CastManager.prototype.onRequestSessionSuccess = function()
+{
+	console.log("Request session success");
+}
+
+CastManager.prototype.onLaunchError = function()
+{
+	console.log("Launch error");
 }
