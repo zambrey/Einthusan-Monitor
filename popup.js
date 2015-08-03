@@ -50,12 +50,12 @@ function sendMessage(msgType, languageName)
 function PopupRenderManager()
 {
 	var renderObject = new Object();
-	backgroundPage.backgroundObject.PreferencesManager.getPreferenceValueAsync(backgroundPage.CONSTANTS.VIEW_STYLE_PREF, 
+	backgroundPage.backgroundObject.LocalStorageManager.getLocalStorageValueForKey(backgroundPage.CONSTANTS.VIEW_STYLE_KEY, 
 		function(keyAndData)
 		{
 			renderObject.viewStyle = keyAndData['data'];
 		});
-	backgroundPage.backgroundObject.PreferencesManager.getPreferenceValueAsync(backgroundPage.CONSTANTS.DEF_LANG_PREF, 
+	backgroundPage.backgroundObject.LocalStorageManager.getLocalStorageValueForKey(backgroundPage.CONSTANTS.DEFAULT_LANGUAGE_KEY, 
 		function(keyAndData)
 		{
 			renderObject.startLanguage = keyAndData['data'];
@@ -69,7 +69,7 @@ function PopupRenderManager()
 	if(!renderObject.viewStyle)
 	{
 		renderObject.viewStyle = backgroundPage.CONSTANTS.DEFAULT_VIEW_STYLE;
-		backgroundPage.backgroundObject.PreferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.VIEW_STYLE_PREF, backgroundPage.CONSTANTS.DEFAULT_VIEW_STYLE);
+		backgroundPage.backgroundObject.LocalStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.VIEW_STYLE_KEY, backgroundPage.CONSTANTS.DEFAULT_VIEW_STYLE);
 	}
 	renderObject.renderOnDataReady = function()
 	{
@@ -85,7 +85,7 @@ function PopupRenderManager()
 		if(!startLang)
 		{
 			startLang = languages[0];
-			backgroundPage.backgroundObject.PreferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.DEF_LANG_PREF, startLang);
+			backgroundPage.backgroundObject.LocalStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.DEFAULT_LANGUAGE_KEY, startLang);
 		}
 		selControl = startLang.toLowerCase()+"Button";
 		$("#"+selControl).trigger("click");
@@ -114,7 +114,7 @@ function PopupRenderManager()
 		}
 		var languagesTable = document.getElementById('languageButtons'),
 			tr,
-			button,
+			buttons = [],
 			lang,
 			td,
 			div,
@@ -124,19 +124,26 @@ function PopupRenderManager()
 			tr =document.createElement('tr');
 			for(i=0; i<languages.length; i++)
 			{
-				button = document.createElement('button');
+				var button = document.createElement('button');
 				button.setAttribute('class','btn');
 				button.setAttribute('id',languages[i].toLowerCase()+"Button");
 				button.innerHTML = languages[i];
 				lang = languages[i];
 				button.addEventListener('click',function(){popupObject.PopupInteractionManager.languageControlClickHandler(this);});
-				if(backgroundPage.newMoviesCnt[i]>0)
-				{
-					this.addLanguageControlBadge(button,backgroundPage.newMoviesCnt[i]);
-				}
 				button.setAttribute('style','margin:4px;');
+				buttons.push(button);
 				languagesTable.appendChild(button);
 			}
+			backgroundPage.backgroundObject.LocalStorageManager.getLocalStorageValueForKey(backgroundPage.CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY, function(keyAndData){
+				var notifLangs = keyAndData["data"];
+				for(var j=0; j<languages.length;j++)
+				{
+					if(backgroundPage.newMoviesCnt[j]>0 && notifLangs[languages[j]])
+					{
+						popupObject.PopupRenderManager.addLanguageControlBadge(buttons[j],backgroundPage.newMoviesCnt[j]);
+					}	
+				}
+			});
 		}
 		languagesTable.style.opacity = 1.0;
 	}
@@ -219,7 +226,7 @@ function PopupRenderManager()
 			{
 				if(backgroundPage.newMoviesCnt[backgroundPage.backgroundObject.ContentManager.getLanguageIndex(language)]>0)
 				{
-					backgroundPage.backgroundObject.LocalStorageManager.setLocalStorageValueForKey(language.toLowerCase()+"Movies",backgroundPage.backgroundObject.LocalStorageManager.processBeforeSettingData(popupObject.PopupRenderManager.dataSource));
+					backgroundPage.backgroundObject.LocalStorageManager.setLocalStorageValueForKey(language.toLowerCase()+"Movies",backgroundPage.backgroundObject.LocalStorageManager.buildMovieNamesArray(popupObject.PopupRenderManager.dataSource));
 					sendMessage(backgroundPage.CONSTANTS.RESET_NEW_FLAGS, language);
 				}
 			}
@@ -311,8 +318,11 @@ function PopupRenderManager()
 	renderObject.removeLanguageControlBadge = function(language)
 	{
 		var button = document.getElementById(language.toLowerCase()+"Button");
-		button.lastChild.style.top = '0px';
-		button.lastChild.style.opacity = 0;
+		if(button.lastElementChild && button.lastElementChild.className.indexOf("badge") >= 0)
+		{
+			button.lastElementChild.style.top = '0px';
+			button.lastElementChild.style.opacity = 0;
+		}
 	}
 	renderObject.renderSearchBar = function()
 	{
@@ -471,7 +481,7 @@ function PopupInteractionManager()
 			if(popupObject.PopupRenderManager.viewStyle != backgroundPage.CONSTANTS.TILE_VIEW_STYLE)
 			{
 				popupObject.PopupRenderManager.viewStyle = backgroundPage.CONSTANTS.TILE_VIEW_STYLE;
-				backgroundPage.backgroundObject.PreferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.VIEW_STYLE_PREF, backgroundPage.CONSTANTS.TILE_VIEW_STYLE);
+				backgroundPage.backgroundObject.LocalStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.VIEW_STYLE_KEY, backgroundPage.CONSTANTS.TILE_VIEW_STYLE);
 				popupObject.PopupRenderManager.switchViewStyle();
 			}
 
@@ -481,7 +491,7 @@ function PopupInteractionManager()
 			if(popupObject.PopupRenderManager.viewStyle != backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
 			{
 				popupObject.PopupRenderManager.viewStyle = backgroundPage.CONSTANTS.LIST_VIEW_STYLE;
-				backgroundPage.backgroundObject.PreferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.VIEW_STYLE_PREF, backgroundPage.CONSTANTS.LIST_VIEW_STYLE);
+				backgroundPage.backgroundObject.LocalStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.VIEW_STYLE_KEY, backgroundPage.CONSTANTS.LIST_VIEW_STYLE);
 				popupObject.PopupRenderManager.switchViewStyle();
 			}
 		})
