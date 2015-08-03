@@ -106,10 +106,9 @@ function handleXMLRequestResponse(request, requestType, languageName, responseTe
 		{
 			langsChecked[i] = 0;
 			newMoviesCnt[i] = 0;
+			transitionCookiesToChromeStorage(backgroundObject.ContentManager.getLanguagesData()[i]);
 			getMovieTitlesForLanguage(backgroundObject.ContentManager.getLanguagesData()[i]);
 		}
-		//This call is to remove cookie from user's systems. Can be removed in next version.
-		backgroundObject.CookieManager.clearCookies();
 	}
 	else if(requestType == CONSTANTS.MOVIES_REQUEST)
 	{
@@ -478,6 +477,7 @@ function LocalStorageManager()
 
 	this.setLocalStorageValueForKey = function(key, data)
 	{
+		console.log("Setting data "+data);
 		var details = {};
 		details[key] = data;
 		chrome.storage.sync.set(details, null);	
@@ -542,4 +542,22 @@ function transitionPreferencesToChromeStorage()
 		localStorage.removeItem(this.VIEW_STYLE_KEY);
 	}
 	backgroundObject.LocalStorageManager.setLocalStorageValuesInBatch(prefs);
+}
+
+function transitionCookiesToChromeStorage(language)
+{
+	var details = new Object(), oldMovieTitles = null;
+	details.url = CONSTANTS.HOME_URL;
+	details.name = language.toLowerCase()+'Movies';
+	chrome.cookies.get(details, function(cookie){
+		if(cookie)
+		{
+			console.log(cookie.value)
+			var cookieString = decodeURIComponent(cookie.value);
+			console.log(cookieString);
+			backgroundObject.LocalStorageManager.setLocalStorageValueForKey(details.name, cookieString.split("--"));
+			chrome.cookies.remove(details,null);
+			console.log("cookie removed");
+		}
+	});
 }
