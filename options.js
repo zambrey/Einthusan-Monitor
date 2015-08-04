@@ -32,11 +32,11 @@ function renderOnDataReady()
 {
 	var listHtml = "", 
 		notifListHtml = "";
-		languages = backgroundPage.backgroundObject.ContentManager.getLanguagesData();
+	languages = backgroundPage.backgroundObject.ContentManager.getLanguagesData();
 	for(i=0; i<languages.length; i++)
 	{
 		listHtml = listHtml + "<li><a href=#>"+languages[i]+"</a></li>";
-		if(notifLang[languages[i]])
+		if(!notifLang || (notifLang && notifLang[languages[i]]))
 			notifListHtml = notifListHtml + "<label><input type='checkbox' checked value='"+languages[i]+"'>"+languages[i]+"</label>";
 		else
 			notifListHtml = notifListHtml + "<label><input type='checkbox' value='"+languages[i]+"'>"+languages[i]+"</label>";

@@ -17,6 +17,7 @@
 			backgroundObject = new BackgroundObject();
 		if(!CONSTANTS)
 			CONSTANTS = new constants();
+		chrome.runtime.setUninstallURL(CONSTANTS.UNINSTALL_URL);
 		initiate();
 	}
 
@@ -36,6 +37,7 @@
 		this.QUERY_PATH = "index.php?lang=";
 		this.LIST_VIEW_STYLE = "listView";
 		this.TILE_VIEW_STYLE = "tileView";
+		this.UNINSTALL_URL = "http://goo.gl/forms/dtfJ9uPcW3";
 
 		//PREFERENCE RELATED CONSTANTS
 		this.DEFAULT_LANGUAGE_KEY = "defaultLanguage";
@@ -309,7 +311,7 @@ function sumUpArraySelectively(arrayToSum, includeInSum)
 		languagesList = backgroundObject.ContentManager.getLanguagesData();
 	for(i=0; i<arrayToSum.length; i++)
 	{
-		if(includeInSum[languagesList[i]])
+		if(!includeInSum || (includeInSum && includeInSum[languagesList[i]]))
 		{
 			sum += arrayToSum[i];
 		}
