@@ -21,10 +21,6 @@ var backgroundPage = chrome.extension.getBackgroundPage(),
 			timeVal = keyAndData[backgroundPage.CONSTANTS.REFRESH_TIME_VALUE_KEY];
 			timeUnit = keyAndData[backgroundPage.CONSTANTS.REFRESH_TIME_UNIT_KEY];
 			renderOptionsPage();
-			$("#selectedLanguage").html(defaultLang+" <span class=\"caret\"></span>");
-			$("#timeValue").val(timeVal);
-			$("#selectedTimeUnit").html(timeUnit+" <span class=\"caret\"></span>");	
-			$(".lastUpdated").text(getLastUpdatedText());
 		});
 }
 
@@ -45,6 +41,17 @@ function renderOnDataReady()
 	$("#notifChecklist").html(notifListHtml);
 	setLastUpdatedText();
 	setInteraction();
+	if(defaultLang)
+	{
+		$("#selectedLanguage").html(defaultLang+" <span class=\"caret\"></span>");
+	}
+	else
+	{
+		$("#selectedLanguage").html(languages[0]+" <span class=\"caret\"></span>");
+		backgroundPage.backgroundObject.LocalStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.DEFAULT_LANGUAGE_KEY, languages[0]);
+	}
+	$("#timeValue").val(timeVal);
+	$("#selectedTimeUnit").html(timeUnit+" <span class=\"caret\"></span>");	
 }
 
 function setTimeoutOnDataNotReady()

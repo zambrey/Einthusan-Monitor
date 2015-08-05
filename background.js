@@ -25,7 +25,6 @@
 	{
 		var object = new Object();
 		object.ContentManager = new ContentManager();
-		object.CookieManager = new CookieManager();
 		object.LocalStorageManager = new LocalStorageManager();
 		return object;
 	}
@@ -111,6 +110,7 @@ function handleXMLRequestResponse(request, requestType, languageName, responseTe
 			transitionCookiesToChromeStorage(backgroundObject.ContentManager.getLanguagesData()[i]);
 			getMovieTitlesForLanguage(backgroundObject.ContentManager.getLanguagesData()[i]);
 		}
+		removeOtherCookies();
 	}
 	else if(requestType == CONSTANTS.MOVIES_REQUEST)
 	{
@@ -479,7 +479,6 @@ function LocalStorageManager()
 
 	this.setLocalStorageValueForKey = function(key, data)
 	{
-		console.log("Setting data "+data);
 		var details = {};
 		details[key] = data;
 		chrome.storage.sync.set(details, null);	
@@ -499,19 +498,6 @@ function LocalStorageManager()
 	this.setLocalStorageValuesInBatch = function(data)
 	{
 		chrome.storage.sync.set(data, null);
-	}
-}
-
-/*Cookie Manager*/
-function CookieManager()
-{
-	this.clearCookies = function()
-	{
-		var languages = backgroundObject.ContentManager.getLanguagesData();
-		for(var i=0; i<languages.length; i++)
-		{
-			chrome.cookies.remove({'url':CONSTANTS.HOME_URL, 'name':languages[i].toLowerCase()+'Movies'},null);
-		}
 	}
 }
 
@@ -554,12 +540,25 @@ function transitionCookiesToChromeStorage(language)
 	chrome.cookies.get(details, function(cookie){
 		if(cookie)
 		{
-			console.log(cookie.value)
 			var cookieString = decodeURIComponent(cookie.value);
-			console.log(cookieString);
 			backgroundObject.LocalStorageManager.setLocalStorageValueForKey(details.name, cookieString.split("--"));
 			chrome.cookies.remove(details,null);
-			console.log("cookie removed");
+		}
+	});
+}
+
+/*Some cookies were created when extension was malfuncitoning. Removing those*/
+function removeOtherCookies()
+{
+	chrome.cookies.getAll({url:CONSTANTS.HOME_URL}, function(cookies)
+	{
+		for(var i=0; i<cookies.length; i++)
+		{
+			if(cookies[i].name.indexOf("Movies")>=0)
+			{
+				chrome.cookies.remove({url:CONSTANTS.HOME_URL,name:cookies[i].name}, null)
+			}
+			
 		}
 	});
 }
