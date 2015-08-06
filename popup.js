@@ -239,6 +239,20 @@ function PopupRenderManager()
 			movieDetails = movieObject.movieDetails;
 		popupObject.PopupRenderManager.usedHolder.appendChild(this.createMovieItem(movieTitle, movieObject.isNew, movieCover, movieObject.watchURL, movieDetails));
 	}
+	renderObject.addMovieItemToRenderedListAtIndex = function(movieObject, index)
+	{
+		var movieTitle = movieObject.movieTitle;
+			movieCover = movieObject.movieCover;
+			movieDetails = movieObject.movieDetails;
+		if(index == 0)
+		{
+			$('#movieTitlesList > tbody > tr').eq(0).before(this.createMovieItem(movieTitle, movieObject.isNew, movieCover, movieObject.watchURL, movieDetails));	
+		}
+		else
+		{
+			$('#movieTitlesList > tbody > tr').eq(index-1).after(this.createMovieItem(movieTitle, movieObject.isNew, movieCover, movieObject.watchURL, movieDetails));	
+		}
+	}
 	renderObject.createMovieItem = function(movieTitle, isNew, movieCover, watchURL, movieDetails)
 	{
 		var item;
@@ -525,9 +539,8 @@ function SearchManager()
 	{
 		$("#searchPage").val(page);
 		var request = $.post(this.searchUrl, $("#searchForm").serialize(), function(data,textStatus, xhr){
-
-              	popupObject.SearchManager.processSearchResponse(data, xhr);
-            }
+			popupObject.SearchManager.processSearchResponse(data, xhr);
+		}
           ).fail(function(jqXHR, textStatus, errorThrown){
      		if(errorThrown != "abort")
           		popupObject.PopupRenderManager.showAlertBox("Something went wrong.")
@@ -572,10 +585,49 @@ function SearchManager()
 		{
 			data = $.parseJSON(data);
 			var mo = popupObject.SearchManager.MovieObject(data.movie_id, data.movie, data.language, data.cover, this.collateMovieDetails(data));
-			popupObject.PopupRenderManager.dataSource.push(mo);
+			
+			var index = this.findPositionToInsertMO(mo.movieTitle);
+			//console.log("Inserting '"+mo.movieTitle+"' at position "+index)
+			//popupObject.PopupRenderManager.dataSource.push(mo);
+			popupObject.PopupRenderManager.dataSource.insert(index, mo);
+			//this.printDataSource(popupObject.PopupRenderManager.dataSource);
 
-			popupObject.PopupRenderManager.addMovieItemToRenderedList(mo);
+			popupObject.PopupRenderManager.addMovieItemToRenderedListAtIndex(mo, index);
 		}
+	}
+	searchObject.printDataSource = function(ds)
+	{
+		for(var i=0;i<ds.length; i++)
+		{
+			console.log(i+": "+ds[i].movieTitle);
+		}
+	}
+	searchObject.findPositionToInsertMO = function(title)
+	{
+		var moviesArray = popupObject.PopupRenderManager.dataSource,
+			low = 0,
+			high = moviesArray.length-1,
+			mid, currMidTitle, compareVal;
+		
+		if(moviesArray.length == 0)
+		{
+			return low;
+		}
+		while(high>=low)
+		{
+			mid = Math.floor((low+high)/2);
+			currMidTitle = moviesArray[mid].movieTitle;
+			compareVal = title.localeCompare(currMidTitle);
+			if(compareVal<0)
+			{
+				high = mid-1;
+			}
+			else if(compareVal>0)
+			{
+				low = mid+1;
+			}
+		}
+		return compareVal<0?mid:mid+1;
 	}
 	searchObject.collateMovieDetails = function(data)
 	{
@@ -611,3 +663,7 @@ function SearchManager()
 	}
 	return searchObject;
 }
+
+Array.prototype.insert = function (index, item) {
+  this.splice(index, 0, item);
+};
