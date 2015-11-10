@@ -65,32 +65,38 @@ table#movieTitlesList>tbody::-webkit-scrollbar-thumb, div#movieTitlesTiles::-web
   -webkit-box-shadow: inset 0 0 8px rgba(255,255,255,1); 
 }
 
-.icon-cog
+.glyphicon-cog
 {
   position:absolute; 
   opacity:1.0; 
-  bottom:0; 
-  right:0; 
   display:none;
   -webkit-transition: opacity 0.15s ease-out;
+  z-index: 10;
+  right:2px; 
+  top:14px;
 }
 
-.icon-search
+.glyphicon-search
 {
   position:absolute; 
   opacity:1.0; 
   display:none;
   -webkit-transition: opacity 0.15s ease-out;
+  z-index: 10;
+  left:2px; 
+  top:14px;
 }
 
 div#toolsPanel
 {
   background:rgba(128,0,0,1);
-  width:100%; 
+  width:100%;
+  height: 42px; 
   position:absolute; 
   opacity:0;
   padding:2px;
   -webkit-transition:top 0.25s ease-out, opacity 0.25s ease-out;
+  z-index: 10;
 }
 
 .badge
@@ -175,18 +181,44 @@ div#toolsPanel
   overflow-y:scroll; 
 }
 
+.carousel-control
+{
+  background: none !important;
+  color: black !important;
+  text-shadow: none;
+  cursor: pointer;
+  font-size: 14px;
+  width: auto;
+}
+
+.carousel-control:hover,.glyphicon-search:hover,.glyphicon-cog:hover
+{
+  color: rgb(128,0,0) !important;
+}
+
+.left
+{
+  left: 35px;
+}
+
+.right
+{
+  right: 35px !important;
+}
+
+.glyphicon
+{
+  cursor: pointer;
+}
+
 /*Preferences Page*/
 div#preferencesPageRootDiv
 {
   margin-left: auto; 
   margin-right: auto; 
   width: 900px; 
-  border: 1px solid #666666; 
   margin-top: 20px; 
   height: auto; 
-  box-shadow: 0px 4px 20px #666666; 
-  border-radius: 4px; 
-  background-color:rgba(200,200,200,0.1); 
   padding-bottom:20px;
 }
 
@@ -240,19 +272,12 @@ div#searchDiv
   top:-36px; 
   opacity:0; 
   -webkit-transition:top 0.25s ease-out, opacity 0.25s ease-out;
+  z-index: 10;
 }
 
-.icon-cog 
+.glyphicon-white
 {
-  position:absolute; 
-  right:2px; 
-  top:14px;
-}
-.icon-search
-{
-  position:absolute; 
-  left:2px; 
-  top:14px;
+  color:white;
 }
 
 #removeTopBar
@@ -281,32 +306,37 @@ div#searchDiv
   margin-right:2px;
 }
 
-.icon-info-sign
+.glyphicon-info-sign, .glyphicon-wrench, .glyphicon-th, .glyphicon-th-list, #glyphicon-remove
 {
   float:right; 
-  margin-left:3px;
+  margin-left:6px;
   margin-top:10px;
-  margin-right:3px;
+  margin-right:6px;
+  z-index: 10;
+  font-size: 16px;
 }
 
-.icon-wrench
+#listView, #tileView
 {
-  float:right; 
-  margin-left:3px;
-  margin-top:10px;
-  margin-right:3px;
+  color: white;
+}
+
+#listView[active=true], #tileView[active=true]
+{
+  color: black;
 }
 
 #infoPanel
 {
   opacity:0;
   position:absolute; 
-  top:42px; 
-  width:309px; 
+  top:50px; 
+  width:100%; 
   height:auto; 
   overflow-y:auto; 
   left:-362px;
   -webkit-transition:left 0.25s ease-out, opacity 0.25s ease-out;
+  z-index: 10;
 }
 
 #alertBox
@@ -314,8 +344,8 @@ div#searchDiv
   pointer-events:none; 
   opacity:0; 
   position:absolute; 
-  top:42px; 
-  width:309px; 
+  top:50px; 
+  width:100%; 
   height:auto; 
   overflow-y:auto; 
   -webkit-transition:left 0.25s ease-out, opacity 0.25s ease-out; 
@@ -334,7 +364,7 @@ div#searchDiv
     }
 }
 
-.icon-refresh-rotate 
+.glyphicon-refresh-rotate 
 {
     -webkit-animation-name: rotate; 
     -webkit-animation-duration: 1.5s; 
@@ -342,12 +372,15 @@ div#searchDiv
     -webkit-animation-timing-function: linear;
 }
 
-a
+.label
 {
-  color: rgb(128,0,0);
+  font-size: 14px;
+  font-weight: normal;
+  margin-right: 5px;
+  cursor: pointer;
 }
 
-a:hover
+.control-label
 {
-  color: rgb(200,0,0);
+  font-weight: normal;
 }

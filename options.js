@@ -33,9 +33,9 @@ function renderOnDataReady()
 	{
 		listHtml = listHtml + "<li><a href=#>"+languages[i]+"</a></li>";
 		if(!notifLang || (notifLang && notifLang[languages[i]]))
-			notifListHtml = notifListHtml + "<label><input type='checkbox' checked value='"+languages[i]+"'>"+languages[i]+"</label>";
+			notifListHtml = notifListHtml + /*"<label><input type='checkbox' checked value='"+languages[i]+"'>"+languages[i]+"</label>"*/"<span class=\"label label-success\">"+languages[i]+"</span>";
 		else
-			notifListHtml = notifListHtml + "<label><input type='checkbox' value='"+languages[i]+"'>"+languages[i]+"</label>";
+			notifListHtml = notifListHtml + /*"<label><input type='checkbox' value='"+languages[i]+"'>"+languages[i]+"</label>"*/"<span class=\"label label-danger\">"+languages[i]+"</span>";
 	}
 	$("#languageList").html(listHtml);
 	$("#notifChecklist").html(notifListHtml);
@@ -88,15 +88,26 @@ function setInteraction()
    		sendMessage(backgroundPage.CONSTANTS.INITIATE_AGAIN);
    });
 
-   $(".icon-refresh").click(function(){
+   $(".glyphicon-refresh").click(function(){
    		sendMessage(backgroundPage.CONSTANTS.INITIATE_AGAIN);
    })
-   $("#notifChecklist input").change(function(){
+   /*$("#notifChecklist input").change(function(){
    		var notifList = $("#notifChecklist input"),
    			prefNotif = {};
    		for(var i=0; i<notifList.length; i++)
    		{
    			prefNotif[notifList[i].value] = notifList[i].checked;
+   		}
+   		backgroundPage.backgroundObject.LocalStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY, prefNotif);
+   		sendMessage(backgroundPage.CONSTANTS.INITIATE_AGAIN);
+   });*/
+	$("#notifChecklist span").click(function(event){
+		$(event.target).toggleClass("label-danger label-success");
+   		var notifList = $("#notifChecklist span"),
+   			prefNotif = {};
+   		for(var i=0; i<notifList.length; i++)
+   		{
+   			prefNotif[notifList[i].innerText/*value*/] = $(notifList[i]).hasClass("label-danger")?false:true;// notifList[i].checked;
    		}
    		backgroundPage.backgroundObject.LocalStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY, prefNotif);
    		sendMessage(backgroundPage.CONSTANTS.INITIATE_AGAIN);
@@ -160,7 +171,7 @@ function sendMessage(msgType)
 	msgObject.messageType = msgType;
 	if(msgType == backgroundPage.CONSTANTS.INITIATE_AGAIN)
 	{
-		$(".icon-refresh").addClass('icon-refresh-rotate');
+		$(".glyphicon-refresh").addClass('glyphicon-refresh-rotate');
 	}
 	chrome.extension.sendRequest(msgObject, function(response){
 		if(response.messageType == backgroundPage.CONSTANTS.IS_DATA_READY_RESPONSE)
@@ -182,7 +193,7 @@ chrome.extension.onRequest.addListener(
 		if (request.messageType == backgroundPage.CONSTANTS.INITIATED)
 		{
 			setLastUpdatedText();
-			$(".icon-refresh").removeClass('icon-refresh-rotate');
+			$(".glyphicon-refresh").removeClass('glyphicon-refresh-rotate');
 		}	
 	});
  

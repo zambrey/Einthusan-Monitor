@@ -13,39 +13,45 @@
   </head>
   <body>
     <div id="progressIndicatorDiv" style='display:none;'> 
-      <div class="progress progress-success progress-striped active">
-        <div class="bar" style="width:100%;"></div>
+      <div class="progress">
+        <div class="progress-bar progress-bar-success progress-bar-striped active" style="width:100%;"></div>
       </div>
     </div>
-    <div id="progressFail" class="alert alert-error" style="margin-top:20px;text-align:center; display:none;">
+    <div id="progressFail" class="alert alert-danger" style="margin-top:20px;text-align:center; display:none;">
         <h5 id="failTextHolder">Something went wrong.</h5>
     </div>
-    <i class='icon-search'></i>
-    <i class='icon-cog'></i>
+    <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+    <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
     <div id='searchDiv' style='top:-36px;'>
-      <i id="removeTopBar" class='icon-remove icon-white' style=''></i>
+      <span id="removeTopBar" class='glyphicon glyphicon-remove glyphicon-white' style=''></span>
       <form id="searchForm" enctype="" class="form-search" style=''>
-        <div class="input-append">
+        <!--div class="input-append">
           <input id="searchTerm" name="search" type="text" class="span2 search-query" style="width:230px;">
           <input id="searchLang" name="lang" type="hidden">
           <input id="searchPage" name="page" type="hidden" value="1">
-          <button id="submitSearch" type="submit" class="btn">Search</button>
+          <button id="submitSearch" type="submit" class="btn">Search</button-->
+          <div class="input-group">
+            <input id="searchTerm" name="search" type="text" class="form-control" placeholder="Type a movie title">
+            <input id="searchLang" name="lang" type="hidden">
+            <input id="searchPage" name="page" type="hidden" value="1">
+            <span class="input-group-btn">
+              <button id="submitSearch" class="btn btn-default" type="submit">Search</button>
+            </span>
+          </div>
         </div>
       </form>
     </div>
 
     <div id='toolsPanel' style='top:-36px;'>
-      <i id="removeBottomBar" class='icon-remove icon-white'></i>
-      <i class="icon-wrench icon-white"></i>
-      <i class='icon-info-sign icon-white'></i>
-      <div class="btn-group" style='float:right; margin:2px; margin-right:3px; margin-left:3px;'>
-        <button class="btn" id='tileView'><i style="margin-top:2px;" class='icon-th'></i></button>
-        <button class="btn" id='listView'><i style="margin-top:2px;"class='icon icon-th-list'></i></button>
-      </div>
+      <span id="removeBottomBar" class='glyphicon glyphicon-remove glyphicon-white'></span>
+      <span class="glyphicon glyphicon-wrench glyphicon-white"></span>
+      <span class='glyphicon glyphicon-info-sign glyphicon-white'></span>
+      <span id='tileView' class='glyphicon glyphicon-th glyphicon-white'></span>
+      <span id='listView' class='glyphicon glyphicon-th-list glyphicon-white'></span>
     </div>
     
-    <div id="infoPanel" class="alert alert-error" style="">
-      <button id="dismissInfoPanel" type="button" class="close" data-dismiss="alert">&times;</button>
+    <div id="infoPanel" class="alert alert-danger alert-dismissable" role="alert" style="">
+      <button id="dismissInfoPanel" type="button" class="close" onclick="$('.glyphicon-info-sign').trigger('click');">&times;</button>
       <b><a id="homepage" href="http://zambrey.github.io/Einthusan-Monitor/">Einthusan Monitor</a></b> v3.0
       <h6>Updates</h6>
       <ul>
@@ -55,12 +61,24 @@
       <h6><a id="feedback" href="https://chrome.google.com/webstore/detail/einthusan-monitor/khhfpiaglmihaifnfocggdmifdeigkhg/reviews?hl=en">Did you find Einthusan Monitor useful?</a></h6>
     </div>
 
-    <div id="alertBox" class="alert alert-error">
-      <button id="dismissAlertBox" type="button" class="close" data-dismiss="alert">&times;</button>
+    <div id="alertBox" class="alert alert-danger alert-dismissable" role="alert">
+      <button id="dismissAlertBox" type="button" class="close" onclick="dissmissAlertBox();">&times;</button>
       <h4 id="alertTextHolder"></h4>
     </div>
 
-    <div id='languageButtons'></div>
+    <div id='languageButtons'>
+      <div id="language-carousel" class="carousel slide">
+        <div class="carousel-inner" role="listbox">
+        </div>
+        <a class="left carousel-control" href="#language-carousel" role="button" data-slide="prev">
+          <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
+        </a>
+        <a class="right carousel-control" href="#language-carousel" role="button" data-slide="next">
+          <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+        </a>
+      </div>
+    </div>
+
     <table id='movieTitlesList' class='table table-hover'><tbody></tbody></table>
     <div id='movieTitlesTiles'></div>
 
@@ -68,5 +86,6 @@
   <footer>
     <script src="popup.js"></script>
     <script src="js/jquery-2.0.3.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
   </footer>
 </html>

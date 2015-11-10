@@ -12,12 +12,10 @@ var backgroundPage = chrome.extension.getBackgroundPage(),
 
 function PopupObject()
 {
-	var object = new Object();
-	object.numAttempts = 0;
-	object.PopupRenderManager = new PopupRenderManager();
-	object.PopupInteractionManager = new PopupInteractionManager();
-	object.SearchManager = new SearchManager();
-	return object;
+	this.numAttempts = 0;
+	this.PopupRenderManager = new PopupRenderManager();
+	this.PopupInteractionManager = new PopupInteractionManager();
+	this.SearchManager = new SearchManager();
 }
 
 function sendMessage(msgType, languageName)
@@ -49,29 +47,28 @@ function sendMessage(msgType, languageName)
 
 function PopupRenderManager()
 {
-	var renderObject = new Object();
 	backgroundPage.backgroundObject.LocalStorageManager.getLocalStorageValueForKey(backgroundPage.CONSTANTS.VIEW_STYLE_KEY, 
 		function(keyAndData)
 		{
-			renderObject.viewStyle = keyAndData['data'];
+			popupObject.PopupRenderManager.viewStyle = keyAndData['data'];
 		});
 	backgroundPage.backgroundObject.LocalStorageManager.getLocalStorageValueForKey(backgroundPage.CONSTANTS.DEFAULT_LANGUAGE_KEY, 
 		function(keyAndData)
 		{
-			renderObject.startLanguage = keyAndData['data'];
+			popupObject.PopupRenderManager.startLanguage = keyAndData['data'];
 		});
-	renderObject.listViewHolder = document.getElementById('movieTitlesList').childNodes[0];
-	renderObject.tileViewHolder = document.getElementById('movieTitlesTiles');
-	renderObject.usedHolder = null;
-	renderObject.unusedHolder = null;
-	renderObject.selectedLanguage = null;
-	renderObject.dataSource = null;
-	if(!renderObject.viewStyle)
+	this.listViewHolder = document.getElementById('movieTitlesList').childNodes[0];
+	this.tileViewHolder = document.getElementById('movieTitlesTiles');
+	this.usedHolder = null;
+	this.unusedHolder = null;
+	this.selectedLanguage = null;
+	this.dataSource = null;
+	if(!this.viewStyle)
 	{
-		renderObject.viewStyle = backgroundPage.CONSTANTS.DEFAULT_VIEW_STYLE;
+		this.viewStyle = backgroundPage.CONSTANTS.DEFAULT_VIEW_STYLE;
 		backgroundPage.backgroundObject.LocalStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.VIEW_STYLE_KEY, backgroundPage.CONSTANTS.DEFAULT_VIEW_STYLE);
 	}
-	renderObject.renderOnDataReady = function()
+	this.renderOnDataReady = function()
 	{
 		var startLang, languages, selControl;
 		popupObject.PopupRenderManager.hideProgressIndicator();
@@ -91,10 +88,20 @@ function PopupRenderManager()
 		$("#"+selControl).trigger("click");
 		popupObject.PopupRenderManager.renderToolsBar();
 		popupObject.PopupRenderManager.renderSearchBar();
-		$(".icon-cog").css('display','block');
-		$(".icon-search").css('display','block');
+		$(".glyphicon-cog").css('display','block');
+		$(".glyphicon-search").css('display','block');
+		if(this.viewStyle==backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
+		{
+			$("#listView").attr("active","true");
+			$("#tileView").attr("active","false");
+		}
+		else
+		{
+			$("#listView").attr("active","false");
+			$("#tileView").attr("active","true");
+		}
 	}
-	renderObject.setTimeoutOnDataNotReady = function()
+	this.setTimeoutOnDataNotReady = function()
 	{
 		popupObject.PopupRenderManager.showProgressIndicator();
 		if(popupObject.numAttempts++ < 15)
@@ -102,11 +109,11 @@ function PopupRenderManager()
 		else
 			popupObject.PopupRenderManager.showProgressFailure();
 	}
-	renderObject.initRender = function()
+	this.initRender = function()
 	{
 		sendMessage(backgroundPage.CONSTANTS.IS_DATA_READY_QUERY);
 	}
-	renderObject.renderLanguageControls = function(languages)
+	this.renderLanguageControls = function(languages)
 	{
 		if(!languages)
 		{
@@ -122,6 +129,8 @@ function PopupRenderManager()
 		if(languages.length>0 && languagesTable)
 		{
 			tr =document.createElement('tr');
+			var caroDiv=document.createElement("div");
+			$(caroDiv).addClass("item").addClass("active");
 			for(i=0; i<languages.length; i++)
 			{
 				var button = document.createElement('button');
@@ -132,7 +141,13 @@ function PopupRenderManager()
 				button.addEventListener('click',function(){popupObject.PopupInteractionManager.languageControlClickHandler(this);});
 				button.setAttribute('style','margin:4px;');
 				buttons.push(button);
-				languagesTable.appendChild(button);
+				caroDiv.appendChild(button);
+				if(caroDiv.children.length>=3 || i==languages.length-1)
+				{
+					$(caroDiv).appendTo($(".carousel-inner"));
+					caroDiv=document.createElement("div");
+					$(caroDiv).addClass("item");
+				}
 			}
 			backgroundPage.backgroundObject.LocalStorageManager.getLocalStorageValueForKey(backgroundPage.CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY, function(keyAndData){
 				var notifLangs = keyAndData["data"];
@@ -147,7 +162,7 @@ function PopupRenderManager()
 		}
 		languagesTable.style.opacity = 1.0;
 	}
-	renderObject.renderSelectedLanguageControl = function(language)
+	this.renderSelectedLanguageControl = function(language)
 	{
 		popupObject.PopupRenderManager.selectedLanguage = language;
 		var languages = backgroundPage.backgroundObject.ContentManager.getLanguagesData();
@@ -164,23 +179,23 @@ function PopupRenderManager()
 			}
 		}
 	}
-	renderObject.deselectLanguageControl = function()
+	this.deselectLanguageControl = function()
 	{
 		var langButton = document.getElementById(this.selectedLanguage.toLowerCase()+"Button");
 		if(langButton)
 		{
-			langButton.setAttribute('class','btn btn-inverse');
+			langButton.setAttribute('class','btn btn-primary');
 		}
 	}
-	renderObject.addLanguageControlBadge = function(control, newMoviesNumber)
+	this.addLanguageControlBadge = function(control, newMoviesNumber)
 	{
 		badge = document.createElement('span');
-		badge.setAttribute('class','badge badge-warning');
-		badge.setAttribute('style','position:absolute; top:25px;');
+		badge.setAttribute('class','badge');
+		badge.setAttribute('style','position:absolute; top:22px; background:orangered; color:white;');
 		badge.innerText = newMoviesNumber;
 		control.appendChild(badge);
 	}
-	renderObject.renderMovieItems = function(movieItemsSource)
+	this.renderMovieItems = function(movieItemsSource)
 	{
 		if(popupObject.PopupRenderManager.viewStyle == backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
 		{
@@ -192,11 +207,11 @@ function PopupRenderManager()
 		}
 		setTimeout(function(){popupObject.PopupRenderManager.renderDataSource(movieItemsSource);},250);
 	}
-	renderObject.switchViewStyle = function()
+	this.switchViewStyle = function()
 	{
 		this.renderMovieItems();
 	}
-	renderObject.renderDataSource = function(movieItemsSource)
+	this.renderDataSource = function(movieItemsSource)
 	{
 		var titleTable,
 			movieObjects = popupObject.PopupRenderManager.dataSource;
@@ -232,14 +247,14 @@ function PopupRenderManager()
 			}
 		}
 	}
-	renderObject.addMovieItemToRenderedList = function(movieObject)
+	this.addMovieItemToRenderedList = function(movieObject)
 	{
 		var movieTitle = movieObject.movieTitle;
 			movieCover = movieObject.movieCover;
 			movieDetails = movieObject.movieDetails;
 		popupObject.PopupRenderManager.usedHolder.appendChild(this.createMovieItem(movieTitle, movieObject.isNew, movieCover, movieObject.watchURL, movieDetails));
 	}
-	renderObject.addMovieItemToRenderedListAtIndex = function(movieObject, index)
+	this.addMovieItemToRenderedListAtIndex = function(movieObject, index)
 	{
 		var movieTitle = movieObject.movieTitle;
 			movieCover = movieObject.movieCover;
@@ -253,7 +268,7 @@ function PopupRenderManager()
 			$('#movieTitlesList > tbody > tr').eq(index-1).after(this.createMovieItem(movieTitle, movieObject.isNew, movieCover, movieObject.watchURL, movieDetails));	
 		}
 	}
-	renderObject.createMovieItem = function(movieTitle, isNew, movieCover, watchURL, movieDetails)
+	this.createMovieItem = function(movieTitle, isNew, movieCover, watchURL, movieDetails)
 	{
 		var item;
 		if(popupObject.PopupRenderManager.viewStyle == backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
@@ -266,7 +281,7 @@ function PopupRenderManager()
 		}
 		return item;
 	}
-	renderObject.createMovieTile = function(movieTitle, isNew, movieCover, watchURL)
+	this.createMovieTile = function(movieTitle, isNew, movieCover, watchURL)
 	{
 		var div = document.createElement('div');
 		div.setAttribute('title',movieTitle);
@@ -287,7 +302,7 @@ function PopupRenderManager()
 		div.addEventListener('click',clickHandler);
 		return div;
 	}
-	renderObject.createMovieListItem = function(movieTitle, isNew, movieCover, watchURL, movieDetails)
+	this.createMovieListItem = function(movieTitle, isNew, movieCover, watchURL, movieDetails)
 	{
 		var tr = document.createElement('tr');
 		if(isNew)
@@ -316,7 +331,7 @@ function PopupRenderManager()
 		tr.addEventListener('click',clickHandler);
 		return tr;
 	}
-	renderObject.formatMovieDescription = function(description)
+	this.formatMovieDescription = function(description)
 	{
 		var detailsString = "Starring", directorString = "Directed by", musicString = "Music by",
 			castIndex = description.indexOf(detailsString),
@@ -329,7 +344,7 @@ function PopupRenderManager()
 		formattedDescription = "<i>Cast:</i> "+castValue + "<br><i>Director:</i> "+ directorValue + "<br><i>Music:</i> " + musicValue;
 		return formattedDescription;
 	}
-	renderObject.removeLanguageControlBadge = function(language)
+	this.removeLanguageControlBadge = function(language)
 	{
 		var button = document.getElementById(language.toLowerCase()+"Button");
 		if(button.lastElementChild && button.lastElementChild.className.indexOf("badge") >= 0)
@@ -338,15 +353,15 @@ function PopupRenderManager()
 			button.lastElementChild.style.opacity = 0;
 		}
 	}
-	renderObject.renderSearchBar = function()
+	this.renderSearchBar = function()
 	{
 		popupObject.PopupInteractionManager.setTopBarInteraction();
 	}
-	renderObject.renderToolsBar = function()
+	this.renderToolsBar = function()
 	{
 		popupObject.PopupInteractionManager.setBottomBarInteraction();
 	}
-	renderObject.hideProgressIndicator = function()
+	this.hideProgressIndicator = function()
 	{
 		var pi = document.getElementById('progressIndicatorDiv');
 		if(pi)
@@ -354,7 +369,7 @@ function PopupRenderManager()
 			pi.style.display = 'none';
 		}
 	}
-	renderObject.showProgressIndicator = function()
+	this.showProgressIndicator = function()
 	{
 		var pi = document.getElementById('progressIndicatorDiv');
 		if(pi)
@@ -362,27 +377,25 @@ function PopupRenderManager()
 			pi.style.display = 'block';
 		}
 	}
-	renderObject.showProgressFailure = function()
+	this.showProgressFailure = function()
 	{
 		$("#progressIndicatorDiv").css('display','none');
 		$("#progressFail").css('display','block');
 	}
-	renderObject.showAlertBox = function(message)
+	this.showAlertBox = function(message)
 	{
 		$("#alertTextHolder").text(message);
 		$("#alertBox").css({'opacity':'1','pointer-events':'all'});
 	}
-	renderObject.dismissAlertBox = function()
+	this.dismissAlertBox = function()
 	{
 		$("#alertBox").css({'opacity':'0','pointer-events':'none'});
 	}
-	return renderObject;
 }
 
 function PopupInteractionManager()
 {
-	var interactionObject = new Object();
-	interactionObject.languageControlClickHandler = function(control)
+	this.languageControlClickHandler = function(control)
 	{
 		var language = control.childNodes[0].nodeValue;
 		popupObject.SearchManager.abortSearch();
@@ -390,28 +403,28 @@ function PopupInteractionManager()
 		popupObject.PopupRenderManager.dataSource = backgroundPage.backgroundObject.ContentManager.getMoviesData(language);
 		popupObject.PopupRenderManager.renderMovieItems("latest");
 	}
-	interactionObject.getMovieRowClickHandler = function(url)
+	this.getMovieRowClickHandler = function(url)
 	{
 		return function()
 		{
 			chrome.tabs.create({"url":url},function(){});
 		}
 	}
-	interactionObject.setTopBarInteraction = function()
+	this.setTopBarInteraction = function()
 	{
-		$(".icon-search").click(function(){
+		$(".glyphicon-search").click(function(){
 			$('#searchDiv').css('top','0');
 			$('#searchDiv').css('opacity','1');
 			$("#searchTerm").val("Search "+popupObject.PopupRenderManager.selectedLanguage+" Movies");
 			$("#searchLang").val(popupObject.PopupRenderManager.selectedLanguage.toLowerCase());
 			$("#searchTerm").css('color','#BBBBBB');
-			$(".icon-search").css('opacity','0');
+			$(".glyphicon-search").css('opacity','0');
 			$("#searchTerm").trigger("focus");
 		});
 		$("#removeTopBar").click(function(){
 			$('#searchDiv').css('top','-36px');
 			$('#searchDiv').css('opacity','0');
-			$('.icon-search').css('opacity','1');
+			$('.glyphicon-search').css('opacity','1');
 		});
 		$("#searchTerm").focus(function(){
 			if($("#searchTerm").val().indexOf("Search "+ popupObject.PopupRenderManager.selectedLanguage+" Movies") != -1 )
@@ -442,25 +455,25 @@ function PopupInteractionManager()
         	popupObject.PopupRenderManager.dismissAlertBox();
         });
 	}
-	interactionObject.setBottomBarInteraction = function()
+	this.setBottomBarInteraction = function()
 	{
-		$(".icon-cog").click(function()
+		$(".glyphicon-cog").click(function()
 		{
 			$("#toolsPanel").css('top','0');
 			$("#toolsPanel").css('opacity','1');
-			$(".icon-cog").css('opacity','0');
+			$(".glyphicon-cog").css('opacity','0');
 		});
 		$("#removeBottomBar").click(function()
 		{
 			$("#toolsPanel").css('top','-36px');
 			$("#toolsPanel").css('opacity','0');
-			$(".icon-cog").css('opacity','1');
+			$(".glyphicon-cog").css('opacity','1');
 			if($("#infoPanel").css('opacity') == '1')
 				$("#dismissInfoPanel").trigger("click");
 		});
-		$(".icon-info-sign").click(function()
+		$(".glyphicon-info-sign").click(function()
 		{
-			$(".icon-info-sign").toggleClass('icon-white');
+			$(".glyphicon-info-sign").toggleClass('icon-white');
 			if($("#infoPanel").css('opacity') == '0')
 			{
 				$("#infoPanel").css('opacity','1');
@@ -472,13 +485,13 @@ function PopupInteractionManager()
 				$("#infoPanel").css('left','-362px');
 			}
 		});
-		$(".icon-wrench").click(function()
+		$(".glyphicon-wrench").click(function()
 		{
 			chrome.tabs.create({url:"options.html"});
 		});
 		$("#dismissInfoPanel").click(function()
 		{
-			$(".icon-info-sign").toggleClass('icon-white');
+			$(".glyphicon-info-sign").toggleClass('icon-white');
 			$("#infoPanel").css('opacity','0');
 			$("#infoPanel").css('left','-362px');
 		});
@@ -497,6 +510,8 @@ function PopupInteractionManager()
 				popupObject.PopupRenderManager.viewStyle = backgroundPage.CONSTANTS.TILE_VIEW_STYLE;
 				backgroundPage.backgroundObject.LocalStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.VIEW_STYLE_KEY, backgroundPage.CONSTANTS.TILE_VIEW_STYLE);
 				popupObject.PopupRenderManager.switchViewStyle();
+				$("#listView").attr("active","false");
+				$("#tileView").attr("active","true");
 			}
 
 		})
@@ -507,24 +522,24 @@ function PopupInteractionManager()
 				popupObject.PopupRenderManager.viewStyle = backgroundPage.CONSTANTS.LIST_VIEW_STYLE;
 				backgroundPage.backgroundObject.LocalStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.VIEW_STYLE_KEY, backgroundPage.CONSTANTS.LIST_VIEW_STYLE);
 				popupObject.PopupRenderManager.switchViewStyle();
+				$("#listView").attr("active","true");
+				$("#tileView").attr("active","false");
 			}
 		})
 	}
-	return interactionObject;
 }
 
 function SearchManager()
 {
-	var searchObject = new Object();
-	searchObject.requests = new Array();
-	searchObject.searchUrl = "http://www.einthusan.com/webservice/filters.php";
-	searchObject.movieDataUrl = "http://www.einthusan.com/webservice/movie.php?id=";
-	searchObject.initiateSearch = function()
+	this.requests = new Array();
+	this.searchUrl = "http://www.einthusan.com/webservice/filters.php";
+	this.movieDataUrl = "http://www.einthusan.com/webservice/movie.php?id=";
+	this.initiateSearch = function()
 	{
 		this.abortSearch();
 		popupObject.PopupRenderManager.dataSource = [];
 	}
-	searchObject.abortSearch = function()
+	this.abortSearch = function()
 	{
 		if(this.requests.length > 0)
 		{
@@ -535,7 +550,7 @@ function SearchManager()
 		}
 		this.requests = [];
 	}
-	searchObject.sendSearchRequest = function(page)
+	this.sendSearchRequest = function(page)
 	{
 		$("#searchPage").val(page);
 		var request = $.post(this.searchUrl, $("#searchForm").serialize(), function(data,textStatus, xhr){
@@ -547,7 +562,7 @@ function SearchManager()
           });
           this.requests.push(request);
 	}
-	searchObject.processSearchResponse = function(data, xhr)
+	this.processSearchResponse = function(data, xhr)
 	{
 		data = jQuery.parseJSON(data);
 		if(data && data.found > 0)
@@ -578,7 +593,7 @@ function SearchManager()
 			}
 		}
 	}
-	searchObject.processMovieData = function(data, xhr)
+	this.processMovieData = function(data, xhr)
 	{
 		//check if request is in the array anywhere
 		if(popupObject.SearchManager.requests.indexOf(xhr) != -1 )
@@ -587,22 +602,18 @@ function SearchManager()
 			var mo = popupObject.SearchManager.MovieObject(data.movie_id, data.movie, data.language, data.cover, this.collateMovieDetails(data));
 			
 			var index = this.findPositionToInsertMO(mo.movieTitle);
-			//console.log("Inserting '"+mo.movieTitle+"' at position "+index)
-			//popupObject.PopupRenderManager.dataSource.push(mo);
 			popupObject.PopupRenderManager.dataSource.insert(index, mo);
-			//this.printDataSource(popupObject.PopupRenderManager.dataSource);
-
 			popupObject.PopupRenderManager.addMovieItemToRenderedListAtIndex(mo, index);
 		}
 	}
-	searchObject.printDataSource = function(ds)
+	this.printDataSource = function(ds)
 	{
 		for(var i=0;i<ds.length; i++)
 		{
 			console.log(i+": "+ds[i].movieTitle);
 		}
 	}
-	searchObject.findPositionToInsertMO = function(title)
+	this.findPositionToInsertMO = function(title)
 	{
 		var moviesArray = popupObject.PopupRenderManager.dataSource,
 			low = 0,
@@ -629,7 +640,7 @@ function SearchManager()
 		}
 		return compareVal<0?mid:mid+1;
 	}
-	searchObject.collateMovieDetails = function(data)
+	this.collateMovieDetails = function(data)
 	{
 		var cast = new Array();
 		for(i=1; i<=7; i++)
@@ -651,7 +662,7 @@ function SearchManager()
 		detailsStr = detailsStr +". Directed by "+data.director+". Music by "+data.composer+".";
 		return detailsStr;
 	}
-	searchObject.MovieObject = function(id, title, language, coverSrc, details)
+	this.MovieObject = function(id, title, language, coverSrc, details)
 	{
 		var mo =  new Object();
 		mo.movieTitle = title;
@@ -661,7 +672,6 @@ function SearchManager()
 		mo.isNew = false;
 		return mo;
 	}
-	return searchObject;
 }
 
 Array.prototype.insert = function (index, item) {

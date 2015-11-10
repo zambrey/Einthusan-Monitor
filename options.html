@@ -11,60 +11,73 @@
   <title>Einthusan Monitor Preferences</title>
 </head>
 <body style="width:auto;">
-  <div id='preferencesPageRootDiv'>
-    <div style="text-align:right;padding-right:5px;">
-      <i class="icon-exclamation-sign"></i>
-      <a href="https://chrome.google.com/webstore/support/khhfpiaglmihaifnfocggdmifdeigkhg" style="font-family:Open Sans, sans-serif; font-size:12px;" target="blank">Report Bug/Suggest Feature</a>
-    </div>
-    <div id='preferencesPageIcon'>
-      <img src='icon128.png'></img>
-    </div>
-    <table id="preferencesTable">
-      <tr>
-        <td>
-          <label class="control-label">Default Language:</label>
-        </td>
-        <td>
-          <div class="input-append controls" style = 'margin-left:20px;'>
-            <div class="btn-group">
-              <button id='selectedLanguage' class="btn dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
-              <ul id='languageList' class="dropdown-menu">
-              </ul>
+  <div id='preferencesPageRootDiv' class="panel panel-default">
+    <div class="panel-body">
+      <div style="text-align:right;padding-right:5px;">
+        <span class="glyphicon glyphicon-exclamation-sign"></span>
+        <a href="https://chrome.google.com/webstore/support/khhfpiaglmihaifnfocggdmifdeigkhg" style="font-family:Open Sans, sans-serif; font-size:12px;" target="blank">Report Bug/Suggest Feature</a>
+      </div>
+      <div id='preferencesPageIcon'>
+        <img src='icon128.png'></img>
+      </div>
+      <table id="preferencesTable">
+        <tr>
+          <td>
+            <label class="control-label">Default Language:</label>
+          </td>
+          <td>
+            <div class="input-append controls" style = 'margin-left:20px;'>
+              <div class="btn-group">
+                <button id='selectedLanguage' class="btn btn-default dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
+                <ul id='languageList' class="dropdown-menu">
+                </ul>
+              </div>
             </div>
-          </div>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <label class="control-label">Notifications:</label>
-        </td>
-        <td>
-          <div id="notifChecklist" class="checkbox" style = 'margin-left:20px;'>
-          </div>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <label class="control-label">Refresh Interval:</label>
-        </td>
-        <td>
-          <div class="input-append controls" style = 'margin-left:20px;'>
-            <input class="span2" id="timeValue" type="text">
-            <div class="btn-group">
-              <button id='selectedTimeUnit' class="btn dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
-              <ul class="dropdown-menu">
-                <li><a href="#">Hours</a></li>
-                <li><a href="#">Minutes</a></li>
-                <li><a href="#">Seconds</a></li>
-              </ul>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <label class="control-label">Notifications:</label>
+          </td>
+          <td>
+            <div id="notifChecklist" class="checkbox" style = 'margin-left:20px;'>
             </div>
-          </div>
-        </td>
-      </tr>
-    </table>
-    <div style="text-align:center;">
-      <i class="icon-refresh" style=""></i>
-      <p class="lastUpdated"></p>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <label class="control-label">Refresh Interval:</label>
+          </td>
+          <td>
+            <!--div class="input-append controls" style = 'margin-left:20px;'>
+              <input class="span2" id="timeValue" type="text">
+              <div class="btn-group">
+                <button id='selectedTimeUnit' class="btn dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
+                <ul class="dropdown-menu">
+                  <li><a href="#">Hours</a></li>
+                  <li><a href="#">Minutes</a></li>
+                  <li><a href="#">Seconds</a></li>
+                </ul>
+              </div>
+            </div-->
+            <div class="input-group" style='margin-left:20px;'>
+              <input type="text" class="form-control" id="timeValue">
+              <div class="input-group-btn">
+                <button type="button" id='selectedTimeUnit' class="btn btn-default dropdown-toggle" data-toggle="dropdown">Action <span class="caret"></span></button>
+                <ul class="dropdown-menu dropdown-menu-right">
+                  <li><a href="#">Hours</a></li>
+                  <li><a href="#">Minutes</a></li>
+                  <li><a href="#">Seconds</a></li>
+                </ul>
+              </div><!-- /btn-group -->
+            </div>
+          </td>
+        </tr>
+      </table>
+      <div style="text-align:center;">
+        <span class="glyphicon glyphicon-refresh" style=""></span>
+        <p class="lastUpdated"></p>
+      </div>
     </div>
   </div>
 </body>
