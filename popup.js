@@ -415,9 +415,8 @@ function PopupInteractionManager()
 		$(".glyphicon-search").click(function(){
 			$('#searchDiv').css('top','0');
 			$('#searchDiv').css('opacity','1');
-			$("#searchTerm").val("Search "+popupObject.PopupRenderManager.selectedLanguage+" Movies");
+			$("#searchTerm").attr("placeholder","Search "+popupObject.PopupRenderManager.selectedLanguage+" Movies");
 			$("#searchLang").val(popupObject.PopupRenderManager.selectedLanguage.toLowerCase());
-			$("#searchTerm").css('color','#BBBBBB');
 			$(".glyphicon-search").css('opacity','0');
 			$("#searchTerm").trigger("focus");
 		});
@@ -426,28 +425,9 @@ function PopupInteractionManager()
 			$('#searchDiv').css('opacity','0');
 			$('.glyphicon-search').css('opacity','1');
 		});
-		$("#searchTerm").focus(function(){
-			if($("#searchTerm").val().indexOf("Search "+ popupObject.PopupRenderManager.selectedLanguage+" Movies") != -1 )
-				$("#searchTerm").val("");
-			$("#searchTerm").css('color','#000000');
-		});
-		$("#searchTerm").blur(function(){
-			$("#searchTerm").css('color','#BBBBBB');
-			if($("#searchTerm").val() == "")
-			{
-				$("#searchTerm").val("Search "+popupObject.PopupRenderManager.selectedLanguage+" Movies")
-			}
-		});
-		$("#submitSearch").click(function(){
-
-		});
 		$("#searchForm").submit( function (event) {
 		  popupObject.SearchManager.initiateSearch();
           event.preventDefault();
-          if($("#searchTerm").val() == "Search "+popupObject.PopupRenderManager.selectedLanguage+" Movies")
-          {
-          	$("#searchTerm").val("");
-          }
           popupObject.SearchManager.sendSearchRequest("1");
         });
         $("#dismissAlertBox").click(function()

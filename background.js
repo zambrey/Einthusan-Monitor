@@ -3,7 +3,10 @@
  * Ameya Zambre
  * ameyazambre@gmail.com
  */
- var backgroundObject = null,
+
+
+ var debug = true,
+ 	 backgroundObject = null,
 	 CONSTANTS = null,
 	 newMoviesCnt,
 	 langsChecked,
@@ -40,6 +43,7 @@
 
 		//PREFERENCE RELATED CONSTANTS
 		this.DEFAULT_LANGUAGE_KEY = "defaultLanguage";
+		this.DISPLAY_LANGUAGE_KEY = "displayLanguage";
 		this.NOTIFICATIONS_LANGUAGE_KEY = "notifLanguage";
 		this.REFRESH_TIME_VALUE_KEY = "refreshTimeVal";
 		this.REFRESH_TIME_UNIT_KEY = "refreshTimeUnit";
@@ -561,4 +565,20 @@ function removeOtherCookies()
 			
 		}
 	});
+}
+
+function debugLog(message)
+{
+	if(debug)
+	{
+		console.log(message);
+	}
+}
+
+function alertLog(message)
+{
+	if(debug)
+	{
+		alert(message);
+	}
 }
