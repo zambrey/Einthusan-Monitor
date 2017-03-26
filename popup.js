@@ -291,7 +291,7 @@ function PopupRenderManager()
 			div.style.backgroundColor = "#fcf8e3";
 		}
 		cover = document.createElement('img');
-		cover.setAttribute('src',backgroundPage.CONSTANTS.HOME_URL+movieCover);
+		cover.setAttribute('src',movieCover);
 		cover.setAttribute('class','tileMovieCover');
 		nameDiv = document.createElement('div');
 		nameDiv.innerHTML = movieTitle;
@@ -312,7 +312,7 @@ function PopupRenderManager()
 		var holderDiv = document.createElement('div');
 		td = document.createElement('td');
 		cover = document.createElement('img');
-		cover.setAttribute('src',backgroundPage.CONSTANTS.HOME_URL+movieCover);
+		cover.setAttribute('src',movieCover);
 		cover.setAttribute('class','listMovieCover');
 		nameDiv = document.createElement('div');
 		nameDiv.innerHTML = movieTitle;

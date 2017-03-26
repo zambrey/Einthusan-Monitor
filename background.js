@@ -35,8 +35,8 @@
 	function constants()
 	{
 		//CONSTANT VALUES
-		this.HOME_URL = "http://www.einthusan.com/";
-		this.QUERY_PATH = "index.php?lang=";
+		this.HOME_URL = "https://einthusan.tv";
+		this.QUERY_PATH = "/movie/browse/?lang=";
 		this.LIST_VIEW_STYLE = "listView";
 		this.TILE_VIEW_STYLE = "tileView";
 		this.UNINSTALL_URL = "http://goo.gl/forms/dtfJ9uPcW3";
@@ -76,6 +76,7 @@ function initiate()
 
 function getMovieTitlesForLanguage(languageName)
 {
+	// https://einthusan.tv/movie/browse/?lang=hindi
 	sendXMLRequest(CONSTANTS.HOME_URL+CONSTANTS.QUERY_PATH+languageName.toLowerCase(), CONSTANTS.MOVIES_REQUEST, languageName);
 }
 
@@ -95,12 +96,11 @@ function handleXMLRequestResponse(request, requestType, languageName, responseTe
 	{
 		var doc = document.implementation.createHTMLDocument("languages"),langs;
 		doc.documentElement.innerHTML = responseText;
-		var langsNav = doc.getElementById("jumptolang");
-		langs = langsNav.getElementsByTagName('li');
+		langs = doc.getElementsByTagName('li');
 		backgroundObject.ContentManager.resetLanguages();
 		for(i=0; i<langs.length; i++)
 		{
-			langName = langs[i].firstChild.innerHTML.split(' ')[0];
+			langName = langs[i].firstChild.childNodes[2].innerText;
 			backgroundObject.ContentManager.addLanguage(langName);
 		}
 		backgroundObject.ContentManager.resetMovies();
@@ -119,37 +119,54 @@ function handleXMLRequestResponse(request, requestType, languageName, responseTe
 	else if(requestType == CONSTANTS.MOVIES_REQUEST)
 	{
 		var	movieObjArray,
-			movieElems,
+			featuredMovies,
+			movieTitles,
 			movieCovers,
 			movieDetails;
 		doc= document.implementation.createHTMLDocument("movies");
 		doc.documentElement.innerHTML = responseText;
 		movieObjArray = new Array();
-		movieElems = doc.getElementsByClassName("movie-title");
-		movieCovers = doc.getElementsByClassName("movie-cover-wrapper");
-		movieDetails = doc.getElementsByClassName("desc_body");
-		for(i=0; i<movieElems.length; i++)
+		featuredMovies = doc.getElementById("UIFeaturedFilms");
+		movieCovers = doc.getElementsByClassName("block1");
+		movieDetails = doc.getElementsByClassName("professionals");
+		movieTitles = featuredMovies.getElementsByClassName("title");
+		for(var i=0; i<movieTitles.length; i++)
 		{
-			movieDetails[i].removeChild(movieDetails[i].childNodes[1]);
-			movieObjArray.push(new MovieObject(	movieElems[i].innerHTML.split(' - ')[0],
-				movieCovers[i].firstChild.getAttribute('src'),
-				"Starring "+movieDetails[i].innerText.substring(3),
-				movieCovers[i].getAttribute('href')));
+			var direction = new Array(),
+				lead = new Array(),
+				music = new Array(),
+				supporting = new Array();
+			var professionalLabels = movieDetails[i].getElementsByTagName("label");
+			for(var j=0; j<professionalLabels.length; j++)
+			{
+				var currLabel = professionalLabels[j].innerText.toLowerCase();
+				if(currLabel == "lead") 
+				{
+					lead.push(professionalLabels[j].previousSibling.innerText);
+				}
+				else if(currLabel == "director")
+				{
+					direction.push(professionalLabels[j].previousSibling.innerText);
+				}
+				else if(currLabel == "music director")
+				{
+					music.push(professionalLabels[j].previousSibling.innerText);
+				}
+				else if(currLabel == "supporting")
+				{
+					supporting.push(professionalLabels[j].previousSibling.innerText);
+				}
+			}
+			movieObjArray.push(new MovieObject(	movieTitles[i].firstChild.innerText,
+				"http:"+movieCovers[i].getElementsByTagName("img")[0].getAttribute('src'),
+				lead,
+				supporting,
+				direction,
+				music,
+				movieTitles[i].getAttribute('href')));
 		}
 		backgroundObject.ContentManager.setMoviesData(capitaliseFirstLetter(languageName), movieObjArray);
 		updateNumberOfNewMovies(languageName, movieObjArray);
-		/*backgroundObject.LocalStorageManager.getLocalStorageValueForKey(CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY, function(notifLangs){
-			notifLangs = notifLangs["data"];
-			if(notifLangs[languageName])
-			{
-				updateNumberOfNewMovies(languageName, movieObjArray);
-			}
-			else
-			{
-				var languageIndex = backgroundObject.ContentManager.getLanguageIndex(languageName);
-				langsChecked[languageIndex] = 1;
-			}	
-		});*/
 	}
 	requests.splice(requests.indexOf(request),1);
 	if(requests.length == 0)
@@ -286,15 +303,17 @@ function setTimeoutOrExecuteInitiate(timeLapsedAfterLastUpdate)
 		});
 }
 
-function MovieObject(title, coverSrc, details, watchURL)
+function MovieObject(title, coverSrc, lead, supporting, direction, music, watchURL)
 {
-	var mo =  new Object();
-	mo.movieTitle = title;
-	mo.movieCover = coverSrc;
-	mo.movieDetails = details;
-	mo.watchURL = watchURL;
-	mo.isNew = false;
-	return mo;
+	this.movieTitle = title;
+	this.movieCover = coverSrc;
+	this.movieDetails = "";
+	this.direction = direction;
+	this.lead = lead;
+	this.supporting = supporting;
+	this.music = music;
+	this.watchURL = watchURL;
+	this.isNew = false;
 }
 
 function resetNewFlags(language)
