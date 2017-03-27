@@ -33,11 +33,12 @@ function renderOnDataReady()
 	{
 		listHtml = listHtml + "<li><a href=#>"+languages[i]+"</a></li>";
 		if(!notifLang || (notifLang && notifLang[languages[i]]))
-			notifListHtml = notifListHtml + /*"<label><input type='checkbox' checked value='"+languages[i]+"'>"+languages[i]+"</label>"*/"<span class=\"label label-success\">"+languages[i]+"</span>";
+			notifListHtml = notifListHtml + "<span class=\"label label-success\">"+languages[i]+"</span>";
 		else
-			notifListHtml = notifListHtml + /*"<label><input type='checkbox' value='"+languages[i]+"'>"+languages[i]+"</label>"*/"<span class=\"label label-danger\">"+languages[i]+"</span>";
+			notifListHtml = notifListHtml + "<span class=\"label label-danger\">"+languages[i]+"</span>";
 	}
 	$("#languageList").html(listHtml);
+	$("#showChecklist").html(notifListHtml);
 	$("#notifChecklist").html(notifListHtml);
 	setLastUpdatedText();
 	setInteraction();
