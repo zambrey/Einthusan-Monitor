@@ -153,7 +153,7 @@ function PopupRenderManager()
 				var notifLangs = keyAndData["data"];
 				for(var j=0; j<languages.length;j++)
 				{
-					if(backgroundPage.newMoviesCnt[j]>0 && notifLangs[languages[j]])
+					if(backgroundPage.newMoviesCnt[j]>0 && (!notifLangs || notifLangs[languages[j]]))
 					{
 						popupObject.PopupRenderManager.addLanguageControlBadge(buttons[j],backgroundPage.newMoviesCnt[j]);
 					}	

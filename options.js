@@ -29,6 +29,7 @@ function renderOnDataReady()
 	var listHtml = "", 
 		notifListHtml = "";
 	languages = backgroundPage.backgroundObject.ContentManager.getLanguagesData();
+	ensureValidValues(languages);
 	for(i=0; i<languages.length; i++)
 	{
 		listHtml = listHtml + "<li><a href=#>"+languages[i]+"</a></li>";
@@ -42,15 +43,7 @@ function renderOnDataReady()
 	$("#notifChecklist").html(notifListHtml);
 	setLastUpdatedText();
 	setInteraction();
-	if(defaultLang)
-	{
-		$("#selectedLanguage").html(defaultLang+" <span class=\"caret\"></span>");
-	}
-	else
-	{
-		$("#selectedLanguage").html(languages[0]+" <span class=\"caret\"></span>");
-		backgroundPage.backgroundObject.LocalStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.DEFAULT_LANGUAGE_KEY, languages[0]);
-	}
+	$("#selectedLanguage").html(defaultLang+" <span class=\"caret\"></span>");
 	$("#timeValue").val(timeVal);
 	$("#selectedTimeUnit").html(timeUnit+" <span class=\"caret\"></span>");	
 }
@@ -61,6 +54,23 @@ function setTimeoutOnDataNotReady()
 		setTimeout(renderOptionsPage,1000);
 	else
 		showError();
+}
+
+function ensureValidValues(languages)
+{
+	if(!defaultLang)
+	{
+		backgroundPage.backgroundObject.LocalStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.DEFAULT_LANGUAGE_KEY, languages[0]);
+	}
+	if(!notifLang)
+	{
+		var prefNotif = {};
+   		for(var i=0; i<languages.length; i++)
+   		{
+   			prefNotif[languages[i]] = true;
+   		}
+   		backgroundPage.backgroundObject.LocalStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY, prefNotif);
+	}
 }
 
 function renderOptionsPage()
@@ -92,23 +102,13 @@ function setInteraction()
    $(".glyphicon-refresh").click(function(){
    		sendMessage(backgroundPage.CONSTANTS.INITIATE_AGAIN);
    })
-   /*$("#notifChecklist input").change(function(){
-   		var notifList = $("#notifChecklist input"),
-   			prefNotif = {};
-   		for(var i=0; i<notifList.length; i++)
-   		{
-   			prefNotif[notifList[i].value] = notifList[i].checked;
-   		}
-   		backgroundPage.backgroundObject.LocalStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY, prefNotif);
-   		sendMessage(backgroundPage.CONSTANTS.INITIATE_AGAIN);
-   });*/
 	$("#notifChecklist span").click(function(event){
 		$(event.target).toggleClass("label-danger label-success");
    		var notifList = $("#notifChecklist span"),
    			prefNotif = {};
    		for(var i=0; i<notifList.length; i++)
    		{
-   			prefNotif[notifList[i].innerText/*value*/] = $(notifList[i]).hasClass("label-danger")?false:true;// notifList[i].checked;
+   			prefNotif[notifList[i].innerText] = $(notifList[i]).hasClass("label-danger")?false:true;// notifList[i].checked;
    		}
    		backgroundPage.backgroundObject.LocalStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY, prefNotif);
    		sendMessage(backgroundPage.CONSTANTS.INITIATE_AGAIN);
