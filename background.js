@@ -307,7 +307,6 @@ function MovieObject(title, coverSrc, lead, supporting, direction, music, watchU
 {
 	this.movieTitle = title;
 	this.movieCover = coverSrc;
-	this.movieDetails = "";
 	this.direction = direction;
 	this.lead = lead;
 	this.supporting = supporting;
@@ -367,16 +366,6 @@ function setBadge()
 			chrome.browserAction.setBadgeText({"text":"".toString()});
 		}
 	});
-	/*var badgeNumber = sumUpArray(newMoviesCnt);
-	if(badgeNumber > 0)
-	{
-		chrome.browserAction.setBadgeText({"text":badgeNumber.toString()});//248,148,6
-		chrome.browserAction.setBadgeBackgroundColor({"color":[248,148,6,200]});
-	}
-	else
-	{
-		chrome.browserAction.setBadgeText({"text":"".toString()});
-	}*/
 }
 
 function sendMessage(msgType)
