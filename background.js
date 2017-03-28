@@ -6,7 +6,6 @@
 
 
  var debug = true,
- 	 backgroundObject = null,
 	 CONSTANTS = null,
 	 newMoviesCnt,
 	 langsChecked,
@@ -16,23 +15,15 @@
 	 REFRESH_INTERVAL = 3*60*60*1000; //Three hour
 
 	{
-		if(!backgroundObject)
-			backgroundObject = new BackgroundObject();
 		if(!CONSTANTS)
-			CONSTANTS = new constants();
+			CONSTANTS = new Constants();
+		contentManager = new ContentManager();
+		localStorageManager = new LocalStorageManager();
 		chrome.runtime.setUninstallURL(CONSTANTS.UNINSTALL_URL);
 		initiate();
 	}
 
-	function BackgroundObject()
-	{
-		var object = new Object();
-		object.ContentManager = new ContentManager();
-		object.LocalStorageManager = new LocalStorageManager();
-		return object;
-	}
-
-	function constants()
+	function Constants()
 	{
 		//CONSTANT VALUES
 		this.HOME_URL = "https://einthusan.tv";
@@ -44,6 +35,7 @@
 		//PREFERENCE RELATED CONSTANTS
 		this.DEFAULT_LANGUAGE_KEY = "defaultLanguage";
 		this.DISPLAY_LANGUAGE_KEY = "displayLanguage";
+		this.SHOW_LANGUAGE_KEY = "showLanguage";
 		this.NOTIFICATIONS_LANGUAGE_KEY = "notifLanguage";
 		this.REFRESH_TIME_VALUE_KEY = "refreshTimeVal";
 		this.REFRESH_TIME_UNIT_KEY = "refreshTimeUnit";
@@ -97,22 +89,22 @@ function handleXMLRequestResponse(request, requestType, languageName, responseTe
 		var doc = document.implementation.createHTMLDocument("languages"),langs;
 		doc.documentElement.innerHTML = responseText;
 		langs = doc.getElementsByTagName('li');
-		backgroundObject.ContentManager.resetLanguages();
+		contentManager.resetLanguages();
 		for(i=0; i<langs.length; i++)
 		{
 			langName = langs[i].firstChild.childNodes[2].innerText;
-			backgroundObject.ContentManager.addLanguage(langName);
+			contentManager.addLanguage(langName);
 		}
-		backgroundObject.ContentManager.resetMovies();
-		newMoviesCnt = new Array(); newMoviesCnt.length = backgroundObject.ContentManager.getLanguagesData().length;
-		langsChecked = new Array(); langsChecked.length = backgroundObject.ContentManager.getLanguagesData().length;
+		contentManager.resetMovies();
+		newMoviesCnt = new Array(); newMoviesCnt.length = contentManager.getLanguagesData().length;
+		langsChecked = new Array(); langsChecked.length = contentManager.getLanguagesData().length;
 
-		for(i=0; i<backgroundObject.ContentManager.getLanguagesData().length; i++)
+		for(i=0; i<contentManager.getLanguagesData().length; i++)
 		{
 			langsChecked[i] = 0;
 			newMoviesCnt[i] = 0;
-			transitionCookiesToChromeStorage(backgroundObject.ContentManager.getLanguagesData()[i]);
-			getMovieTitlesForLanguage(backgroundObject.ContentManager.getLanguagesData()[i]);
+			transitionCookiesToChromeStorage(contentManager.getLanguagesData()[i]);
+			getMovieTitlesForLanguage(contentManager.getLanguagesData()[i]);
 		}
 		removeOtherCookies();
 	}
@@ -165,7 +157,7 @@ function handleXMLRequestResponse(request, requestType, languageName, responseTe
 				music,
 				movieTitles[i].getAttribute('href')));
 		}
-		backgroundObject.ContentManager.setMoviesData(capitaliseFirstLetter(languageName), movieObjArray);
+		contentManager.setMoviesData(capitaliseFirstLetter(languageName), movieObjArray);
 		updateNumberOfNewMovies(languageName, movieObjArray);
 	}
 	requests.splice(requests.indexOf(request),1);
@@ -197,10 +189,10 @@ function updateNumberOfNewMovies(languageName, movieObjArray)
 {
 	var moviesCookie = null,
 		details = new Object(),
-		languageIndex = backgroundObject.ContentManager.getLanguageIndex(languageName);
+		languageIndex = contentManager.getLanguageIndex(languageName);
 	details.url = CONSTANTS.HOME_URL;
 	details.name = languageName.toLowerCase()+'Movies';
-	backgroundObject.LocalStorageManager.getLocalStorageValueForKey(details.name, compareNewDataAgainstStoredData);
+	localStorageManager.getLocalStorageValueForKey(details.name, compareNewDataAgainstStoredData);
 }
 
 function compareNewDataAgainstStoredData(keyAndData)
@@ -208,8 +200,8 @@ function compareNewDataAgainstStoredData(keyAndData)
 	var language = keyAndData['key'].substring(0,keyAndData['key'].indexOf("Movies")),
 		language = capitaliseFirstLetter(language);
 		moviesCookie = keyAndData['data'],
-		languageIndex = backgroundObject.ContentManager.getLanguageIndex(language),
-		movieObjArray = backgroundObject.ContentManager.getMoviesData(language);
+		languageIndex = contentManager.getLanguageIndex(language),
+		movieObjArray = contentManager.getMoviesData(language);
 	if(!moviesCookie)
 	{
 		newMoviesCnt[languageIndex] += movieObjArray.length;
@@ -225,7 +217,7 @@ function compareNewDataAgainstStoredData(keyAndData)
 			var movieTitle = movieObjArray[i].movieTitle;
 			if(moviesCookie.indexOf(movieTitle) < 0)
 			{
-				newMoviesCnt[backgroundObject.ContentManager.getLanguagesData().indexOf(language)]++;
+				newMoviesCnt[contentManager.getLanguagesData().indexOf(language)]++;
 				movieObjArray[i].isNew = true;
 			}
 			else
@@ -239,7 +231,7 @@ function compareNewDataAgainstStoredData(keyAndData)
 
 function updateCompleted()
 {
-	if(sumUpArray(langsChecked) == backgroundObject.ContentManager.getLanguagesData().length)
+	if(sumUpArray(langsChecked) == contentManager.getLanguagesData().length)
 	{
 
 		isDataReady = true;
@@ -263,7 +255,7 @@ function capitaliseFirstLetter(string)
   If argument is non-null, it call initiate if timeElapsed > refreshInterval. Otherwise it sets up timout call for initiate.*/
 function setTimeoutOrExecuteInitiate(timeLapsedAfterLastUpdate)
 {
-	backgroundObject.LocalStorageManager.getLocalStorageValuesInBatch([CONSTANTS.REFRESH_TIME_VALUE_KEY,CONSTANTS.REFRESH_TIME_UNIT_KEY],
+	localStorageManager.getLocalStorageValuesInBatch([CONSTANTS.REFRESH_TIME_VALUE_KEY,CONSTANTS.REFRESH_TIME_UNIT_KEY],
 		function(keysAndData)
 		{
 			var refreshTimeVal = parseInt(keysAndData[CONSTANTS.REFRESH_TIME_VALUE_KEY]),
@@ -275,7 +267,7 @@ function setTimeoutOrExecuteInitiate(timeLapsedAfterLastUpdate)
 				var defPrefs = {};
 				defPrefs[CONSTANTS.REFRESH_TIME_VALUE_KEY] = CONSTANTS.DEFAULT_REFRESH_TIME_VALUE;
 				defPrefs[CONSTANTS.REFRESH_TIME_UNIT_KEY] = CONSTANTS.DEFAULT_REFRESH_TIME_UNIT;
-				backgroundObject.LocalStorageManager.setLocalStorageValuesInBatch(defPrefs);
+				localStorageManager.setLocalStorageValuesInBatch(defPrefs);
 			}
 			else
 			{
@@ -317,8 +309,8 @@ function MovieObject(title, coverSrc, lead, supporting, direction, music, watchU
 
 function resetNewFlags(language)
 {
-	var index = backgroundObject.ContentManager.getLanguagesData().indexOf(language),
-	movieList = backgroundObject.ContentManager.getMoviesData(language);
+	var index = contentManager.getLanguagesData().indexOf(language),
+	movieList = contentManager.getMoviesData(language);
 	newMoviesCnt[index] = 0;
 	for(i=0; i<movieList.length; i++)
 	{
@@ -330,7 +322,7 @@ function resetNewFlags(language)
 function sumUpArraySelectively(arrayToSum, includeInSum)
 {
 	var sum = 0,
-		languagesList = backgroundObject.ContentManager.getLanguagesData();
+		languagesList = contentManager.getLanguagesData();
 	for(i=0; i<arrayToSum.length; i++)
 	{
 		if(!includeInSum || (includeInSum && includeInSum[languagesList[i]]))
@@ -353,7 +345,7 @@ function sumUpArray(arrayToSum)
 
 function setBadge()
 {
-	backgroundObject.LocalStorageManager.getLocalStorageValueForKey(CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY, function(notifLangs){
+	localStorageManager.getLocalStorageValueForKey(CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY, function(notifLangs){
 		notifLangs = notifLangs["data"];
 		var badgeNumber = sumUpArraySelectively(newMoviesCnt, notifLangs);
 		if(badgeNumber > 0)
@@ -459,12 +451,6 @@ function ContentManager()
 	return contentObject;
 }
 
-/*Preferences Manager*/
-function PreferencesManager()
-{
-	
-}
-
 /*Local Storage Manager*/
 function LocalStorageManager()
 {
@@ -541,7 +527,7 @@ function transitionPreferencesToChromeStorage()
 		prefs[this.VIEW_STYLE_KEY] = viewStyle;
 		localStorage.removeItem(this.VIEW_STYLE_KEY);
 	}
-	backgroundObject.LocalStorageManager.setLocalStorageValuesInBatch(prefs);
+	localStorageManager.setLocalStorageValuesInBatch(prefs);
 }
 
 function transitionCookiesToChromeStorage(language)
@@ -553,7 +539,7 @@ function transitionCookiesToChromeStorage(language)
 		if(cookie)
 		{
 			var cookieString = decodeURIComponent(cookie.value);
-			backgroundObject.LocalStorageManager.setLocalStorageValueForKey(details.name, cookieString.split("--"));
+			localStorageManager.setLocalStorageValueForKey(details.name, cookieString.split("--"));
 			chrome.cookies.remove(details,null);
 		}
 	});

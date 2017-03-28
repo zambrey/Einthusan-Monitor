@@ -4,18 +4,13 @@
  * ameyazambre@gmail.com
  */
 var backgroundPage = chrome.extension.getBackgroundPage(),
-	popupObject = new PopupObject();
+	numAttempts = 0;
+	renderManager = new PopupRenderManager();
+	interactionManager = new PopupInteractionManager();
+	searchManager = new SearchManager();
 
 {
-	setTimeout(popupObject.PopupRenderManager.initRender, 50);
-}
-
-function PopupObject()
-{
-	this.numAttempts = 0;
-	this.PopupRenderManager = new PopupRenderManager();
-	this.PopupInteractionManager = new PopupInteractionManager();
-	this.SearchManager = new SearchManager();
+	setTimeout(renderManager.initRender, 50);
 }
 
 function sendMessage(msgType, languageName)
@@ -29,17 +24,17 @@ function sendMessage(msgType, languageName)
 	chrome.extension.sendRequest(msgObject, function(response){
 		if(response.messageType == backgroundPage.CONSTANTS.NEW_FLAGS_RESET_DONE)
 		{
-			popupObject.PopupRenderManager.removeLanguageControlBadge(languageName);
+			renderManager.removeLanguageControlBadge(languageName);
 		}
 		if(response.messageType == backgroundPage.CONSTANTS.IS_DATA_READY_RESPONSE)
 		{
 			if(response.status)
 			{
-				popupObject.PopupRenderManager.renderOnDataReady();
+				renderManager.renderOnDataReady();
 			}
 			else
 			{
-				popupObject.PopupRenderManager.setTimeoutOnDataNotReady();
+				renderManager.setTimeoutOnDataNotReady();
 			}
 		}
 	});
@@ -47,15 +42,20 @@ function sendMessage(msgType, languageName)
 
 function PopupRenderManager()
 {
-	backgroundPage.backgroundObject.LocalStorageManager.getLocalStorageValueForKey(backgroundPage.CONSTANTS.VIEW_STYLE_KEY, 
+	backgroundPage.localStorageManager.getLocalStorageValueForKey(backgroundPage.CONSTANTS.VIEW_STYLE_KEY, 
 		function(keyAndData)
 		{
-			popupObject.PopupRenderManager.viewStyle = keyAndData['data'];
+			renderManager.viewStyle = keyAndData['data'];
 		});
-	backgroundPage.backgroundObject.LocalStorageManager.getLocalStorageValueForKey(backgroundPage.CONSTANTS.DEFAULT_LANGUAGE_KEY, 
+	backgroundPage.localStorageManager.getLocalStorageValueForKey(backgroundPage.CONSTANTS.DEFAULT_LANGUAGE_KEY, 
 		function(keyAndData)
 		{
-			popupObject.PopupRenderManager.startLanguage = keyAndData['data'];
+			renderManager.startLanguage = keyAndData['data'];
+		});
+	backgroundPage.localStorageManager.getLocalStorageValueForKey(backgroundPage.CONSTANTS.SHOW_LANGUAGE_KEY,
+		function(keyAndData)
+		{
+			renderManager.showLangs = keyAndData['data'];
 		});
 	this.listViewHolder = document.getElementById('movieTitlesList').childNodes[0];
 	this.tileViewHolder = document.getElementById('movieTitlesTiles');
@@ -66,28 +66,28 @@ function PopupRenderManager()
 	if(!this.viewStyle)
 	{
 		this.viewStyle = backgroundPage.CONSTANTS.DEFAULT_VIEW_STYLE;
-		backgroundPage.backgroundObject.LocalStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.VIEW_STYLE_KEY, backgroundPage.CONSTANTS.DEFAULT_VIEW_STYLE);
+		backgroundPage.localStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.VIEW_STYLE_KEY, backgroundPage.CONSTANTS.DEFAULT_VIEW_STYLE);
 	}
 	this.renderOnDataReady = function()
 	{
 		var startLang, languages, selControl;
-		popupObject.PopupRenderManager.hideProgressIndicator();
+		renderManager.hideProgressIndicator();
 		if(!backgroundPage)
 		{
 			backgroundPage = chrome.extension.getBackgroundPage();
 		}
-		languages = backgroundPage.backgroundObject.ContentManager.getLanguagesData();
-		popupObject.PopupRenderManager.renderLanguageControls(languages);
-		startLang = popupObject.PopupRenderManager.startLanguage;
+		languages = backgroundPage.contentManager.getLanguagesData();
+		renderManager.renderLanguageControls(languages);
+		startLang = renderManager.startLanguage;
 		if(!startLang)
 		{
 			startLang = languages[0];
-			backgroundPage.backgroundObject.LocalStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.DEFAULT_LANGUAGE_KEY, startLang);
+			backgroundPage.localStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.DEFAULT_LANGUAGE_KEY, startLang);
 		}
 		selControl = startLang.toLowerCase()+"Button";
 		$("#"+selControl).trigger("click");
-		popupObject.PopupRenderManager.renderToolsBar();
-		popupObject.PopupRenderManager.renderSearchBar();
+		renderManager.renderToolsBar();
+		renderManager.renderSearchBar();
 		$(".glyphicon-cog").css('display','block');
 		$(".glyphicon-search").css('display','block');
 		if(this.viewStyle==backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
@@ -103,11 +103,11 @@ function PopupRenderManager()
 	}
 	this.setTimeoutOnDataNotReady = function()
 	{
-		popupObject.PopupRenderManager.showProgressIndicator();
-		if(popupObject.numAttempts++ < 15)
-			setTimeout(popupObject.PopupRenderManager.initRender, 1000);
+		renderManager.showProgressIndicator();
+		if(numAttempts++ < 15)
+			setTimeout(renderManager.initRender, 1000);
 		else
-			popupObject.PopupRenderManager.showProgressFailure();
+			renderManager.showProgressFailure();
 	}
 	this.initRender = function()
 	{
@@ -117,7 +117,7 @@ function PopupRenderManager()
 	{
 		if(!languages)
 		{
-			languages = backgroundPage.backgroundObject.ContentManager.getLanguagesData();
+			languages = backgroundPage.contentManager.getLanguagesData();
 		}
 		var languagesTable = document.getElementById('languageButtons'),
 			tr,
@@ -133,29 +133,34 @@ function PopupRenderManager()
 			$(caroDiv).addClass("item").addClass("active");
 			for(i=0; i<languages.length; i++)
 			{
-				var button = document.createElement('button');
-				button.setAttribute('class','btn');
-				button.setAttribute('id',languages[i].toLowerCase()+"Button");
-				button.innerHTML = languages[i];
-				lang = languages[i];
-				button.addEventListener('click',function(){popupObject.PopupInteractionManager.languageControlClickHandler(this);});
-				button.setAttribute('style','margin:4px;');
-				buttons.push(button);
-				caroDiv.appendChild(button);
-				if(caroDiv.children.length>=3 || i==languages.length-1)
+				if(!this.showLangs || this.showLangs[languages[i]])
 				{
-					$(caroDiv).appendTo($(".carousel-inner"));
-					caroDiv=document.createElement("div");
-					$(caroDiv).addClass("item");
+					var button = document.createElement('button');
+					button.setAttribute('class','btn');
+					button.setAttribute('id',languages[i].toLowerCase()+"Button");
+					button.innerHTML = languages[i];
+					lang = languages[i];
+					button.addEventListener('click',function(){interactionManager.languageControlClickHandler(this);});
+					button.setAttribute('style','margin:4px;');
+					buttons.push(button);
+					caroDiv.appendChild(button);
+					if(caroDiv.children.length>=3 || i==languages.length-1)
+					{
+						$(caroDiv).appendTo($(".carousel-inner"));
+						caroDiv=document.createElement("div");
+						$(caroDiv).addClass("item");
+					}
 				}
 			}
-			backgroundPage.backgroundObject.LocalStorageManager.getLocalStorageValueForKey(backgroundPage.CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY, function(keyAndData){
+			backgroundPage.localStorageManager.getLocalStorageValueForKey(backgroundPage.CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY, function(keyAndData){
 				var notifLangs = keyAndData["data"];
 				for(var j=0; j<languages.length;j++)
 				{
-					if(backgroundPage.newMoviesCnt[j]>0 && (!notifLangs || notifLangs[languages[j]]))
+					if(backgroundPage.newMoviesCnt[j]>0 && 
+						(!renderManager.showLangs || renderManager.showLangs[languages[j]]) && 
+						(!notifLangs || notifLangs[languages[j]]))
 					{
-						popupObject.PopupRenderManager.addLanguageControlBadge(buttons[j],backgroundPage.newMoviesCnt[j]);
+						renderManager.addLanguageControlBadge(buttons[j],backgroundPage.newMoviesCnt[j]);
 					}	
 				}
 			});
@@ -164,8 +169,8 @@ function PopupRenderManager()
 	}
 	this.renderSelectedLanguageControl = function(language)
 	{
-		popupObject.PopupRenderManager.selectedLanguage = language;
-		var languages = backgroundPage.backgroundObject.ContentManager.getLanguagesData();
+		renderManager.selectedLanguage = language;
+		var languages = backgroundPage.contentManager.getLanguagesData();
 		for(i=0; i<languages.length; i++)
 		{
 			var langButton = document.getElementById(languages[i].toLowerCase()+"Button");
@@ -197,15 +202,15 @@ function PopupRenderManager()
 	}
 	this.renderMovieItems = function(movieItemsSource)
 	{
-		if(popupObject.PopupRenderManager.viewStyle == backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
+		if(renderManager.viewStyle == backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
 		{
-			popupObject.PopupRenderManager.listViewHolder.parentNode.style.opacity = 0.0;
+			renderManager.listViewHolder.parentNode.style.opacity = 0.0;
 		}
 		else
 		{
-			popupObject.PopupRenderManager.tileViewHolder.style.opacity = 0.0;
+			renderManager.tileViewHolder.style.opacity = 0.0;
 		}
-		setTimeout(function(){popupObject.PopupRenderManager.renderDataSource(movieItemsSource);},250);
+		setTimeout(function(){renderManager.renderDataSource(movieItemsSource);},250);
 	}
 	this.switchViewStyle = function()
 	{
@@ -214,34 +219,34 @@ function PopupRenderManager()
 	this.renderDataSource = function(movieItemsSource)
 	{
 		var titleTable,
-			movieObjects = popupObject.PopupRenderManager.dataSource;
-		if(popupObject.PopupRenderManager.viewStyle == backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
+			movieObjects = renderManager.dataSource;
+		if(renderManager.viewStyle == backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
 		{
-			titleTable = popupObject.PopupRenderManager.listViewHolder.parentNode;
-			popupObject.PopupRenderManager.usedHolder = popupObject.PopupRenderManager.listViewHolder;
-			popupObject.PopupRenderManager.unusedHolder = popupObject.PopupRenderManager.tileViewHolder;
+			titleTable = renderManager.listViewHolder.parentNode;
+			renderManager.usedHolder = renderManager.listViewHolder;
+			renderManager.unusedHolder = renderManager.tileViewHolder;
 		}
 		else
 		{
-			titleTable = popupObject.PopupRenderManager.tileViewHolder;
-			popupObject.PopupRenderManager.usedHolder = titleTable;
-			popupObject.PopupRenderManager.unusedHolder = popupObject.PopupRenderManager.listViewHolder;
+			titleTable = renderManager.tileViewHolder;
+			renderManager.usedHolder = titleTable;
+			renderManager.unusedHolder = renderManager.listViewHolder;
 		}
-		popupObject.PopupRenderManager.usedHolder.innerHTML = "";  //Removing all other names
-		popupObject.PopupRenderManager.unusedHolder.innerHTML = "";
+		renderManager.usedHolder.innerHTML = "";  //Removing all other names
+		renderManager.unusedHolder.innerHTML = "";
 		for(i=0; i<movieObjects.length; i++)
 		{
-			popupObject.PopupRenderManager.addMovieItemToRenderedList(movieObjects[i]);
+			renderManager.addMovieItemToRenderedList(movieObjects[i]);
 		}
 		titleTable.style.opacity = 1.0;
 		if(movieItemsSource == "latest")
 		{
-			var language = popupObject.PopupRenderManager.selectedLanguage;
+			var language = renderManager.selectedLanguage;
 			if(language)
 			{
-				if(backgroundPage.newMoviesCnt[backgroundPage.backgroundObject.ContentManager.getLanguageIndex(language)]>0)
+				if(backgroundPage.newMoviesCnt[backgroundPage.contentManager.getLanguageIndex(language)]>0)
 				{
-					backgroundPage.backgroundObject.LocalStorageManager.setLocalStorageValueForKey(language.toLowerCase()+"Movies",backgroundPage.backgroundObject.LocalStorageManager.buildMovieNamesArray(popupObject.PopupRenderManager.dataSource));
+					backgroundPage.localStorageManager.setLocalStorageValueForKey(language.toLowerCase()+"Movies",backgroundPage.localStorageManager.buildMovieNamesArray(renderManager.dataSource));
 					sendMessage(backgroundPage.CONSTANTS.RESET_NEW_FLAGS, language);
 				}
 			}
@@ -249,7 +254,7 @@ function PopupRenderManager()
 	}
 	this.addMovieItemToRenderedList = function(movieObject)
 	{
-		popupObject.PopupRenderManager.usedHolder.appendChild(this.createMovieItem(movieObject));
+		renderManager.usedHolder.appendChild(this.createMovieItem(movieObject));
 	}
 	this.addMovieItemToRenderedListAtIndex = function(movieObject, index)
 	{
@@ -265,7 +270,7 @@ function PopupRenderManager()
 	this.createMovieItem = function(movieObject)
 	{
 		var item;
-		if(popupObject.PopupRenderManager.viewStyle == backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
+		if(renderManager.viewStyle == backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
 		{
 			item = this.createMovieListItem(movieObject);
 		}
@@ -292,7 +297,7 @@ function PopupRenderManager()
 		nameDiv.setAttribute('class','tileMovieNameDiv');
 		div.appendChild(cover);
 		div.appendChild(nameDiv);
-		clickHandler = popupObject.PopupInteractionManager.getMovieRowClickHandler(backgroundPage.CONSTANTS.HOME_URL+movieObject.watchURL);
+		clickHandler = interactionManager.getMovieRowClickHandler(backgroundPage.CONSTANTS.HOME_URL+movieObject.watchURL);
 		div.addEventListener('click',clickHandler);
 		return div;
 	}
@@ -321,7 +326,7 @@ function PopupRenderManager()
 		td.style.minWidth = "355px";
 		tr.appendChild(td);
 		tr.style.cursor = 'pointer';
-		clickHandler = popupObject.PopupInteractionManager.getMovieRowClickHandler(backgroundPage.CONSTANTS.HOME_URL+movieObject.watchURL);
+		clickHandler = interactionManager.getMovieRowClickHandler(backgroundPage.CONSTANTS.HOME_URL+movieObject.watchURL);
 		tr.addEventListener('click',clickHandler);
 		return tr;
 	}
@@ -369,11 +374,11 @@ function PopupRenderManager()
 	}
 	this.renderSearchBar = function()
 	{
-		popupObject.PopupInteractionManager.setTopBarInteraction();
+		interactionManager.setTopBarInteraction();
 	}
 	this.renderToolsBar = function()
 	{
-		popupObject.PopupInteractionManager.setBottomBarInteraction();
+		interactionManager.setBottomBarInteraction();
 	}
 	this.hideProgressIndicator = function()
 	{
@@ -412,10 +417,10 @@ function PopupInteractionManager()
 	this.languageControlClickHandler = function(control)
 	{
 		var language = control.childNodes[0].nodeValue;
-		popupObject.SearchManager.abortSearch();
-		popupObject.PopupRenderManager.renderSelectedLanguageControl(language);
-		popupObject.PopupRenderManager.dataSource = backgroundPage.backgroundObject.ContentManager.getMoviesData(language);
-		popupObject.PopupRenderManager.renderMovieItems("latest");
+		searchManager.abortSearch();
+		renderManager.renderSelectedLanguageControl(language);
+		renderManager.dataSource = backgroundPage.contentManager.getMoviesData(language);
+		renderManager.renderMovieItems("latest");
 	}
 	this.getMovieRowClickHandler = function(url)
 	{
@@ -429,8 +434,8 @@ function PopupInteractionManager()
 		$(".glyphicon-search").click(function(){
 			$('#searchDiv').css('top','0');
 			$('#searchDiv').css('opacity','1');
-			$("#searchTerm").attr("placeholder","Search "+popupObject.PopupRenderManager.selectedLanguage+" Movies");
-			$("#searchLang").val(popupObject.PopupRenderManager.selectedLanguage.toLowerCase());
+			$("#searchTerm").attr("placeholder","Search "+renderManager.selectedLanguage+" Movies");
+			$("#searchLang").val(renderManager.selectedLanguage.toLowerCase());
 			$(".glyphicon-search").css('opacity','0');
 			$("#searchTerm").trigger("focus");
 		});
@@ -440,13 +445,13 @@ function PopupInteractionManager()
 			$('.glyphicon-search').css('opacity','1');
 		});
 		$("#searchForm").submit( function (event) {
-		  popupObject.SearchManager.initiateSearch();
+		  searchManager.initiateSearch();
           event.preventDefault();
-          popupObject.SearchManager.sendSearchRequest("1");
+          searchManager.sendSearchRequest("1");
         });
         $("#dismissAlertBox").click(function()
         {
-        	popupObject.PopupRenderManager.dismissAlertBox();
+        	renderManager.dismissAlertBox();
         });
 	}
 	this.setBottomBarInteraction = function()
@@ -499,11 +504,11 @@ function PopupInteractionManager()
 		});
 		$("#tileView").click(function()
 		{
-			if(popupObject.PopupRenderManager.viewStyle != backgroundPage.CONSTANTS.TILE_VIEW_STYLE)
+			if(renderManager.viewStyle != backgroundPage.CONSTANTS.TILE_VIEW_STYLE)
 			{
-				popupObject.PopupRenderManager.viewStyle = backgroundPage.CONSTANTS.TILE_VIEW_STYLE;
-				backgroundPage.backgroundObject.LocalStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.VIEW_STYLE_KEY, backgroundPage.CONSTANTS.TILE_VIEW_STYLE);
-				popupObject.PopupRenderManager.switchViewStyle();
+				renderManager.viewStyle = backgroundPage.CONSTANTS.TILE_VIEW_STYLE;
+				backgroundPage.localStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.VIEW_STYLE_KEY, backgroundPage.CONSTANTS.TILE_VIEW_STYLE);
+				renderManager.switchViewStyle();
 				$("#listView").attr("active","false");
 				$("#tileView").attr("active","true");
 			}
@@ -511,11 +516,11 @@ function PopupInteractionManager()
 		})
 		$("#listView").click(function()
 		{
-			if(popupObject.PopupRenderManager.viewStyle != backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
+			if(renderManager.viewStyle != backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
 			{
-				popupObject.PopupRenderManager.viewStyle = backgroundPage.CONSTANTS.LIST_VIEW_STYLE;
-				backgroundPage.backgroundObject.LocalStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.VIEW_STYLE_KEY, backgroundPage.CONSTANTS.LIST_VIEW_STYLE);
-				popupObject.PopupRenderManager.switchViewStyle();
+				renderManager.viewStyle = backgroundPage.CONSTANTS.LIST_VIEW_STYLE;
+				backgroundPage.localStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.VIEW_STYLE_KEY, backgroundPage.CONSTANTS.LIST_VIEW_STYLE);
+				renderManager.switchViewStyle();
 				$("#listView").attr("active","true");
 				$("#tileView").attr("active","false");
 			}
@@ -531,7 +536,7 @@ function SearchManager()
 	this.initiateSearch = function()
 	{
 		this.abortSearch();
-		popupObject.PopupRenderManager.dataSource = [];
+		renderManager.dataSource = [];
 	}
 	this.abortSearch = function()
 	{
@@ -548,11 +553,11 @@ function SearchManager()
 	{
 		$("#searchPage").val(page);
 		var request = $.post(this.searchUrl, $("#searchForm").serialize(), function(data,textStatus, xhr){
-			popupObject.SearchManager.processSearchResponse(data, xhr);
+			searchManager.processSearchResponse(data, xhr);
 		}
           ).fail(function(jqXHR, textStatus, errorThrown){
      		if(errorThrown != "abort")
-          		popupObject.PopupRenderManager.showAlertBox("Something went wrong.")
+          		renderManager.showAlertBox("Something went wrong.")
           });
           this.requests.push(request);
 	}
@@ -563,41 +568,41 @@ function SearchManager()
 		{
 			if(data.page == 1)
 			{
-				popupObject.PopupRenderManager.renderMovieItems("search");
-				popupObject.PopupRenderManager.deselectLanguageControl();
+				renderManager.renderMovieItems("search");
+				renderManager.deselectLanguageControl();
 			}
 			for(i=0; i<data.results.length; i++)
 			{
-				$.get(popupObject.SearchManager.movieDataUrl+data.results[i], (function(req){
+				$.get(searchManager.movieDataUrl+data.results[i], (function(req){
 				  	return function(data){
-								popupObject.SearchManager.processMovieData(data, req);
+								searchManager.processMovieData(data, req);
 							}
 				})(xhr));
 			}
 			if(data.max_page > 1 && data.page<data.max_page)
 			{
-				popupObject.SearchManager.sendSearchRequest(data.page+1);
+				searchManager.sendSearchRequest(data.page+1);
 			}
 		}
 		else
 		{
 			if(!data || data.error || data.error == "No Results Found")
 			{
-				popupObject.PopupRenderManager.showAlertBox("No movies found.");
+				renderManager.showAlertBox("No movies found.");
 			}
 		}
 	}
 	this.processMovieData = function(data, xhr)
 	{
 		//check if request is in the array anywhere
-		if(popupObject.SearchManager.requests.indexOf(xhr) != -1 )
+		if(searchManager.requests.indexOf(xhr) != -1 )
 		{
 			data = $.parseJSON(data);
-			var mo = new popupObject.SearchManager.MovieObject(data.movie_id, data.movie, data.language, data.cover, this.collateMovieDetails(data));
+			var mo = new searchManager.MovieObject(data.movie_id, data.movie, data.language, data.cover, this.collateMovieDetails(data));
 			
 			var index = this.findPositionToInsertMO(mo.movieTitle);
-			popupObject.PopupRenderManager.dataSource.insert(index, mo);
-			popupObject.PopupRenderManager.addMovieItemToRenderedListAtIndex(mo, index);
+			renderManager.dataSource.insert(index, mo);
+			renderManager.addMovieItemToRenderedListAtIndex(mo, index);
 		}
 	}
 	this.printDataSource = function(ds)
@@ -609,7 +614,7 @@ function SearchManager()
 	}
 	this.findPositionToInsertMO = function(title)
 	{
-		var moviesArray = popupObject.PopupRenderManager.dataSource,
+		var moviesArray = renderManager.dataSource,
 			low = 0,
 			high = moviesArray.length-1,
 			mid, currMidTitle, compareVal;

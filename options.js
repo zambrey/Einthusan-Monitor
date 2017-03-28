@@ -11,13 +11,15 @@ var backgroundPage = chrome.extension.getBackgroundPage(),
 	numAttempts = 0;
 
 {
-	backgroundPage.backgroundObject.LocalStorageManager.getLocalStorageValuesInBatch([backgroundPage.CONSTANTS.DEFAULT_LANGUAGE_KEY,
+	backgroundPage.localStorageManager.getLocalStorageValuesInBatch([backgroundPage.CONSTANTS.DEFAULT_LANGUAGE_KEY,
 																					backgroundPage.CONSTANTS.REFRESH_TIME_VALUE_KEY,
 																					backgroundPage.CONSTANTS.REFRESH_TIME_UNIT_KEY,
-																					backgroundPage.CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY],
+																					backgroundPage.CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY,
+																					backgroundPage.CONSTANTS.SHOW_LANGUAGE_KEY],
 		function(keyAndData){
 			defaultLang = keyAndData[backgroundPage.CONSTANTS.DEFAULT_LANGUAGE_KEY];
 			notifLang = keyAndData[backgroundPage.CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY];
+			showLang = keyAndData[backgroundPage.CONSTANTS.SHOW_LANGUAGE_KEY];
 			timeVal = keyAndData[backgroundPage.CONSTANTS.REFRESH_TIME_VALUE_KEY];
 			timeUnit = keyAndData[backgroundPage.CONSTANTS.REFRESH_TIME_UNIT_KEY];
 			renderOptionsPage();
@@ -27,8 +29,9 @@ var backgroundPage = chrome.extension.getBackgroundPage(),
 function renderOnDataReady()
 {
 	var listHtml = "", 
-		notifListHtml = "";
-	languages = backgroundPage.backgroundObject.ContentManager.getLanguagesData();
+		notifListHtml = "",
+		showListHtml = "";
+	languages = backgroundPage.contentManager.getLanguagesData();
 	ensureValidValues(languages);
 	for(i=0; i<languages.length; i++)
 	{
@@ -37,9 +40,14 @@ function renderOnDataReady()
 			notifListHtml = notifListHtml + "<span class=\"label label-success\">"+languages[i]+"</span>";
 		else
 			notifListHtml = notifListHtml + "<span class=\"label label-danger\">"+languages[i]+"</span>";
+		if(!showLang || (showLang && showLang[languages[i]]))
+			showListHtml = showListHtml + "<span class=\"label label-success\">"+languages[i]+"</span>";
+		else
+			showListHtml = showListHtml + "<span class=\"label label-danger\">"+languages[i]+"</span>";
+
 	}
 	$("#languageList").html(listHtml);
-	$("#showChecklist").html(notifListHtml);
+	$("#showChecklist").html(showListHtml);
 	$("#notifChecklist").html(notifListHtml);
 	setLastUpdatedText();
 	setInteraction();
@@ -60,7 +68,16 @@ function ensureValidValues(languages)
 {
 	if(!defaultLang)
 	{
-		backgroundPage.backgroundObject.LocalStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.DEFAULT_LANGUAGE_KEY, languages[0]);
+		backgroundPage.localStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.DEFAULT_LANGUAGE_KEY, languages[0]);
+	}
+	if(!showLang)
+	{
+		var prefShow = {};
+   		for(var i=0; i<languages.length; i++)
+   		{
+   			prefShow[languages[i]] = true;
+   		}
+   		backgroundPage.localStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.SHOW_LANGUAGE_KEY, prefShow);	
 	}
 	if(!notifLang)
 	{
@@ -69,7 +86,7 @@ function ensureValidValues(languages)
    		{
    			prefNotif[languages[i]] = true;
    		}
-   		backgroundPage.backgroundObject.LocalStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY, prefNotif);
+   		backgroundPage.localStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY, prefNotif);
 	}
 }
 
@@ -85,33 +102,52 @@ function setInteraction()
 		$(this).parent().parent().prev().html($(this).text()+" <span class=\"caret\"></span>");
       	if($(this).parent().parent().attr('id') == "languageList")
       	{
-      		backgroundPage.backgroundObject.LocalStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.DEFAULT_LANGUAGE_KEY, $(this).text());
+      		backgroundPage.localStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.DEFAULT_LANGUAGE_KEY, $(this).text());
       	}
       	else
       	{
-      		backgroundPage.backgroundObject.LocalStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.REFRESH_TIME_UNIT_KEY, $(this).text());
+      		backgroundPage.localStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.REFRESH_TIME_UNIT_KEY, $(this).text());
       		sendMessage(backgroundPage.CONSTANTS.INITIATE_AGAIN);
       	}
    });
 
    $("#timeValue").change(function(){
-   		backgroundPage.backgroundObject.LocalStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.REFRESH_TIME_VALUE_KEY, $(this).val());
+   		backgroundPage.localStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.REFRESH_TIME_VALUE_KEY, $(this).val());
    		sendMessage(backgroundPage.CONSTANTS.INITIATE_AGAIN);
    });
 
    $(".glyphicon-refresh").click(function(){
    		sendMessage(backgroundPage.CONSTANTS.INITIATE_AGAIN);
-   })
+   });
+	
 	$("#notifChecklist span").click(function(event){
 		$(event.target).toggleClass("label-danger label-success");
    		var notifList = $("#notifChecklist span"),
    			prefNotif = {};
    		for(var i=0; i<notifList.length; i++)
    		{
-   			prefNotif[notifList[i].innerText] = $(notifList[i]).hasClass("label-danger")?false:true;// notifList[i].checked;
+   			prefNotif[notifList[i].innerText] = $(notifList[i]).hasClass("label-danger")?false:true;
    		}
-   		backgroundPage.backgroundObject.LocalStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY, prefNotif);
+   		backgroundPage.localStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY, prefNotif);
    		sendMessage(backgroundPage.CONSTANTS.INITIATE_AGAIN);
+   });
+
+	$("#showChecklist span").click(function(event){
+		$(event.target).toggleClass("label-danger label-success");
+   		var showList = $("#showChecklist span"),
+   			prefShow = {};
+   		for(var i=0; i<showList.length; i++)
+   		{
+   			if($(showList[i]).hasClass("label-danger")) 
+   			{
+   				prefShow[showList[i].innerText] = false;
+   			}
+   			else
+   			{
+   				prefShow[showList[i].innerText] = true;
+   			}
+   		}
+   		backgroundPage.localStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.SHOW_LANGUAGE_KEY, prefShow);
    });
 }
 
