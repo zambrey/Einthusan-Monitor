@@ -4,35 +4,32 @@
  * ameyazambre@gmail.com
  */
 var backgroundPage = chrome.extension.getBackgroundPage(),
-	defaultLang = null,
-	notifLang = null,
-	timeVal = null,
-	timeUnit = null,
+	defaultLang,
+	showLang,
+	notifLang,
+	timeVal,
+	timeUnit,
 	numAttempts = 0;
 
+confirmIfDataReady();
+
+function confirmIfDataReady()
 {
-	backgroundPage.localStorageManager.getLocalStorageValuesInBatch([backgroundPage.CONSTANTS.DEFAULT_LANGUAGE_KEY,
-																					backgroundPage.CONSTANTS.REFRESH_TIME_VALUE_KEY,
-																					backgroundPage.CONSTANTS.REFRESH_TIME_UNIT_KEY,
-																					backgroundPage.CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY,
-																					backgroundPage.CONSTANTS.SHOW_LANGUAGE_KEY],
-		function(keyAndData){
-			defaultLang = keyAndData[backgroundPage.CONSTANTS.DEFAULT_LANGUAGE_KEY];
-			notifLang = keyAndData[backgroundPage.CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY];
-			showLang = keyAndData[backgroundPage.CONSTANTS.SHOW_LANGUAGE_KEY];
-			timeVal = keyAndData[backgroundPage.CONSTANTS.REFRESH_TIME_VALUE_KEY];
-			timeUnit = keyAndData[backgroundPage.CONSTANTS.REFRESH_TIME_UNIT_KEY];
-			renderOptionsPage();
-		});
+	sendMessage(backgroundPage.CONSTANTS.IS_DATA_READY_QUERY);
 }
 
 function renderOnDataReady()
 {
+	defaultLang = backgroundPage.preferencesManager.defaultLang;
+	notifLang = backgroundPage.preferencesManager.notifLang;
+	showLang = backgroundPage.preferencesManager.showLang;
+	timeVal = backgroundPage.preferencesManager.timeVal;
+	timeUnit = backgroundPage.preferencesManager.timeUnit;
 	var listHtml = "", 
 		notifListHtml = "",
 		showListHtml = "";
 	languages = backgroundPage.contentManager.getLanguagesData();
-	ensureValidValues(languages);
+	backgroundPage.preferencesManager.ensureValidValues(languages);
 	for(i=0; i<languages.length; i++)
 	{
 		listHtml = listHtml + "<li><a href=#>"+languages[i]+"</a></li>";
@@ -59,40 +56,9 @@ function renderOnDataReady()
 function setTimeoutOnDataNotReady()
 {
 	if(numAttempts++ < 15)
-		setTimeout(renderOptionsPage,1000);
+		setTimeout(confirmIfDataReady,1000);
 	else
 		showError();
-}
-
-function ensureValidValues(languages)
-{
-	if(!defaultLang)
-	{
-		backgroundPage.localStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.DEFAULT_LANGUAGE_KEY, languages[0]);
-	}
-	if(!showLang)
-	{
-		var prefShow = {};
-   		for(var i=0; i<languages.length; i++)
-   		{
-   			prefShow[languages[i]] = true;
-   		}
-   		backgroundPage.localStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.SHOW_LANGUAGE_KEY, prefShow);	
-	}
-	if(!notifLang)
-	{
-		var prefNotif = {};
-   		for(var i=0; i<languages.length; i++)
-   		{
-   			prefNotif[languages[i]] = true;
-   		}
-   		backgroundPage.localStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY, prefNotif);
-	}
-}
-
-function renderOptionsPage()
-{
-	sendMessage(backgroundPage.CONSTANTS.IS_DATA_READY_QUERY);
 }
 
 function setInteraction()

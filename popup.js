@@ -10,7 +10,7 @@ var backgroundPage = chrome.extension.getBackgroundPage(),
 	searchManager = new SearchManager();
 
 {
-	setTimeout(renderManager.initRender, 50);
+	setTimeout(renderManager.initRender, 5000);
 }
 
 function sendMessage(msgType, languageName)
@@ -173,14 +173,17 @@ function PopupRenderManager()
 		var languages = backgroundPage.contentManager.getLanguagesData();
 		for(i=0; i<languages.length; i++)
 		{
-			var langButton = document.getElementById(languages[i].toLowerCase()+"Button");
-			if(languages[i] == language)
+			if(!this.showLangs || this.showLangs[languages[i]])
 			{
-				langButton.setAttribute('class','btn btn-success');
-			}
-			else
-			{
-				langButton.setAttribute('class','btn');
+				var langButton = document.getElementById(languages[i].toLowerCase()+"Button");
+				if(languages[i] == language)
+				{
+					langButton.setAttribute('class','btn btn-success');
+				}
+				else
+				{
+					langButton.setAttribute('class','btn');
+				}
 			}
 		}
 	}

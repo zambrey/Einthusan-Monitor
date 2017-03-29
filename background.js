@@ -14,48 +14,49 @@
 	 requests,
 	 REFRESH_INTERVAL = 3*60*60*1000; //Three hour
 
-	{
-		if(!CONSTANTS)
-			CONSTANTS = new Constants();
-		contentManager = new ContentManager();
-		localStorageManager = new LocalStorageManager();
-		chrome.runtime.setUninstallURL(CONSTANTS.UNINSTALL_URL);
-		initiate();
-	}
+{
+	if(!CONSTANTS)
+		CONSTANTS = new Constants();
+	contentManager = new ContentManager();
+	localStorageManager = new LocalStorageManager();
+	preferencesManager = new PreferencesManager();
+	chrome.runtime.setUninstallURL(CONSTANTS.UNINSTALL_URL);
+	initiate();
+}
 
-	function Constants()
-	{
-		//CONSTANT VALUES
-		this.HOME_URL = "https://einthusan.tv";
-		this.QUERY_PATH = "/movie/browse/?lang=";
-		this.LIST_VIEW_STYLE = "listView";
-		this.TILE_VIEW_STYLE = "tileView";
-		this.UNINSTALL_URL = "http://goo.gl/forms/dtfJ9uPcW3";
+function Constants()
+{
+	//CONSTANT VALUES
+	this.HOME_URL = "https://einthusan.tv";
+	this.QUERY_PATH = "/movie/browse/?lang=";
+	this.LIST_VIEW_STYLE = "listView";
+	this.TILE_VIEW_STYLE = "tileView";
+	this.UNINSTALL_URL = "http://goo.gl/forms/dtfJ9uPcW3";
 
-		//PREFERENCE RELATED CONSTANTS
-		this.DEFAULT_LANGUAGE_KEY = "defaultLanguage";
-		this.DISPLAY_LANGUAGE_KEY = "displayLanguage";
-		this.SHOW_LANGUAGE_KEY = "showLanguage";
-		this.NOTIFICATIONS_LANGUAGE_KEY = "notifLanguage";
-		this.REFRESH_TIME_VALUE_KEY = "refreshTimeVal";
-		this.REFRESH_TIME_UNIT_KEY = "refreshTimeUnit";
-		this.VIEW_STYLE_KEY = "viewStyle";
-		this.DEFAULT_REFRESH_TIME_VALUE = "3";
-		this.DEFAULT_REFRESH_TIME_UNIT = "Hours";
-		this.DEFAULT_VIEW_STYLE = this.LIST_VIEW_STYLE;
+	//PREFERENCE RELATED CONSTANTS
+	this.DEFAULT_LANGUAGE_KEY = "defaultLanguage";
+	this.DISPLAY_LANGUAGE_KEY = "displayLanguage";
+	this.SHOW_LANGUAGE_KEY = "showLanguage";
+	this.NOTIFICATIONS_LANGUAGE_KEY = "notifLanguage";
+	this.REFRESH_TIME_VALUE_KEY = "refreshTimeVal";
+	this.REFRESH_TIME_UNIT_KEY = "refreshTimeUnit";
+	this.VIEW_STYLE_KEY = "viewStyle";
+	this.DEFAULT_REFRESH_TIME_VALUE = "3";
+	this.DEFAULT_REFRESH_TIME_UNIT = "Hours";
+	this.DEFAULT_VIEW_STYLE = this.LIST_VIEW_STYLE;
 
-		//EXTERNAL COMMUNICATION KEYS
-		this.LANGUAGES_REQUEST = "languageRequest";
-		this.MOVIES_REQUEST = "moviesRequest";
+	//EXTERNAL COMMUNICATION KEYS
+	this.LANGUAGES_REQUEST = "languageRequest";
+	this.MOVIES_REQUEST = "moviesRequest";
 
-		//INTER-SCRIPT COMMUNICATION KEYS
-		this.RESET_NEW_FLAGS = "resetNewFlags";
-		this.INITIATE_AGAIN = "initiateAgain";
-		this.NEW_FLAGS_RESET_DONE = "newFlagsReset";
-		this.INITIATED = "initiated";
-		this.IS_DATA_READY_QUERY = "isDataReadyQuery";
-		this.IS_DATA_READY_RESPONSE = "isDataReadyResponse"
-	}
+	//INTER-SCRIPT COMMUNICATION KEYS
+	this.RESET_NEW_FLAGS = "resetNewFlags";
+	this.INITIATE_AGAIN = "initiateAgain";
+	this.NEW_FLAGS_RESET_DONE = "newFlagsReset";
+	this.INITIATED = "initiated";
+	this.IS_DATA_READY_QUERY = "isDataReadyQuery";
+	this.IS_DATA_READY_RESPONSE = "isDataReadyResponse"
+}
 
 function initiate()
 {
@@ -64,6 +65,7 @@ function initiate()
 	sendXMLRequest(CONSTANTS.HOME_URL, CONSTANTS.LANGUAGES_REQUEST, null);
 	setTimeoutOrExecuteInitiate(null);
 	transitionPreferencesToChromeStorage();
+	preferencesManager.getAllPreferences();
 }
 
 function getMovieTitlesForLanguage(languageName)
@@ -231,7 +233,7 @@ function compareNewDataAgainstStoredData(keyAndData)
 
 function updateCompleted()
 {
-	if(sumUpArray(langsChecked) == contentManager.getLanguagesData().length)
+	if(sumUpArray(langsChecked) == contentManager.getLanguagesData().length && preferencesManager.preferencesRetrieved)
 	{
 
 		isDataReady = true;
@@ -392,63 +394,107 @@ chrome.extension.onRequest.addListener(
 		}
 	});
 
+function PreferencesManager()
+{
+	this.preferencesRetrieved = false;
+	this.defaultLang = "";
+	this.notifLang = [];
+	this.timeVal = 3;
+	this.timeUnit = "Hours";
+	this.getAllPreferences = function()
+	{
+		localStorageManager.getLocalStorageValuesInBatch([CONSTANTS.DEFAULT_LANGUAGE_KEY,
+																					CONSTANTS.REFRESH_TIME_VALUE_KEY,
+																					CONSTANTS.REFRESH_TIME_UNIT_KEY,
+																					CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY,
+																					CONSTANTS.SHOW_LANGUAGE_KEY],
+		function(keyAndData){
+			preferencesManager.defaultLang = keyAndData[CONSTANTS.DEFAULT_LANGUAGE_KEY];
+			preferencesManager.notifLang = keyAndData[CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY];
+			preferencesManager.showLang = keyAndData[CONSTANTS.SHOW_LANGUAGE_KEY];
+			preferencesManager.timeVal = keyAndData[CONSTANTS.REFRESH_TIME_VALUE_KEY];
+			preferencesManager.timeUnit = keyAndData[CONSTANTS.REFRESH_TIME_UNIT_KEY];
+			preferencesManager.preferencesRetrieved = true;
+		});
+	}
+
+	this.ensureValidValues = function(languages)
+	{
+		if(!this.defaultLang)
+		{
+			localStorageManager.setLocalStorageValueForKey(CONSTANTS.DEFAULT_LANGUAGE_KEY, languages[0]);
+		}
+		if(!this.showLang)
+		{
+			var prefShow = {};
+	   		for(var i=0; i<languages.length; i++)
+	   		{
+	   			prefShow[languages[i]] = true;
+	   		}
+	   		localStorageManager.setLocalStorageValueForKey(CONSTANTS.SHOW_LANGUAGE_KEY, prefShow);	
+		}
+		if(!this.notifLang)
+		{
+			var prefNotif = {};
+	   		for(var i=0; i<languages.length; i++)
+	   		{
+	   			prefNotif[languages[i]] = true;
+	   		}
+	   		localStorageManager.setLocalStorageValueForKey(CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY, prefNotif);
+		}
+	}
+}
 
 
 /*Content Manager*/
 function ContentManager()
 {
-	var contentObject = new Object();
-	contentObject.languages = [];
-	contentObject.movies = [];
-	contentObject.resetLanguages = function()
+	this.languages = [];
+	this.movies = [];
+	this.resetLanguages = function()
 	{
 		this.languages = [];
 	}
-	contentObject.resetMovies = function()
+	this.resetMovies = function()
 	{
 		this.movies.length = this.languages.length;
 	}
-	contentObject.getLanguageIndex = function(language)
+	this.getLanguageIndex = function(language)
 	{
 		return this.languages.indexOf(language);
 	}
-	contentObject.addLanguage = function(language)
+	this.addLanguage = function(language)
 	{
 		this.languages.push(language);
 	}
-	contentObject.getLanguagesData = function()
+	this.getLanguagesData = function()
 	{
 		return this.languages;
 	}
-	contentObject.getMoviesData = function(language)
+	this.getMoviesData = function(language)
 	{
 		return this.movies[this.getLanguageIndex(language)];
 	}
-	contentObject.getAllMoviesData = function()
+	this.getAllMoviesData = function()
 	{
 		return this.movies;
 	}
-	contentObject.setLanguagesData = function(languages)
+	this.setLanguagesData = function(languages)
 	{
 		this.languages = languages;
 	}
-	contentObject.setMoviesData = function(language, moviesData)
+	this.setMoviesData = function(language, moviesData)
 	{
 		this.movies[this.getLanguageIndex(language)] = moviesData;
 	}
-	contentObject.setAllMoviesData = function(moviesData)
+	this.setAllMoviesData = function(moviesData)
 	{
 		this.movies = moviesData;
 	}
-	contentObject.setNewFlag = function(language, index)
+	this.setNewFlag = function(language, index)
 	{
 		this.movies[this.getLanguageIndex(language)][index] = true;
 	}
-	contentObject.resetNewFlags = function(language)
-	{
-		//Implement later
-	}
-	return contentObject;
 }
 
 /*Local Storage Manager*/
