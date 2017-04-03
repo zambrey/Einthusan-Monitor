@@ -21,6 +21,12 @@ function renderOnDataReady()
 		notifListHtml = "",
 		showListHtml = "";
 	languages = backgroundPage.contentManager.getLanguagesData();
+	if(languages == null)
+	{
+		$("#preferencesTable").css("display", "none");
+		$("#panel-body-error").css("display", "block");	
+		return;
+	}
 	for(i=0; i<languages.length; i++)
 	{
 		listHtml = listHtml + "<li><a href=#>"+languages[i]+"</a></li>";
