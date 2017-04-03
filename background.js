@@ -64,7 +64,6 @@ function initiate()
 	preferencesManager.getAllPreferences();
 	requests = [];
 	sendXMLRequest(CONSTANTS.HOME_URL, CONSTANTS.LANGUAGES_REQUEST, null);
-	setTimeoutOrExecuteInitiate(null);
 	transitionPreferencesToChromeStorage();
 }
 
@@ -258,44 +257,36 @@ function capitaliseFirstLetter(string)
   If argument is non-null, it calls initiate if timeElapsed > refreshInterval. Otherwise it sets up timout call for initiate.*/
 function setTimeoutOrExecuteInitiate(timeLapsedAfterLastUpdate)
 {
-	localStorageManager.getLocalStorageValuesInBatch([CONSTANTS.REFRESH_TIME_VALUE_KEY,CONSTANTS.REFRESH_TIME_UNIT_KEY],
-		function(keysAndData)
+	var refreshTimeVal = parseInt(preferencesManager.prefs[CONSTANTS.REFRESH_TIME_VALUE_KEY]),
+		refreshTimeUnit = preferencesManager.prefs[CONSTANTS.REFRESH_TIME_UNIT_KEY],
+		refreshInterval = 0;
+	if(!refreshTimeVal || !refreshTimeUnit)
+	{
+		refreshInterval = REFRESH_INTERVAL;
+	}
+	else
+	{
+		refreshInterval = refreshTimeVal * 1000;
+		if(refreshTimeUnit == "Minutes")
 		{
-			var refreshTimeVal = parseInt(preferencesManager.prefs[CONSTANTS.REFRESH_TIME_VALUE_KEY]),
-				refreshTimeUnit = preferencesManager.prefs[CONSTANTS.REFRESH_TIME_UNIT_KEY],
-				refreshInterval = 0;
-			if(!refreshTimeVal || !refreshTimeUnit)
-			{
-				refreshInterval = REFRESH_INTERVAL;
-				var defPrefs = {};
-				defPrefs[CONSTANTS.REFRESH_TIME_VALUE_KEY] = CONSTANTS.DEFAULT_REFRESH_TIME_VALUE;
-				defPrefs[CONSTANTS.REFRESH_TIME_UNIT_KEY] = CONSTANTS.DEFAULT_REFRESH_TIME_UNIT;
-				localStorageManager.setLocalStorageValuesInBatch(defPrefs);
-			}
-			else
-			{
-				refreshInterval = refreshTimeVal * 1000;
-				if(refreshTimeUnit == "Minutes")
-				{
-					refreshInterval = refreshInterval * 60;
-				}
-				if(refreshTimeUnit == "Hours")
-				{
-					refreshInterval = refreshInterval * 60 * 60;
-				}
-			}
-			if(timeLapsedAfterLastUpdate!=null)
-			{
-				if(timeLapsedAfterLastUpdate >= refreshInterval)
-				{
-					initiate();
-				}
-			}
-			else
-			{
-				setTimeout(initiate, refreshInterval);
-			}
-		});
+			refreshInterval = refreshInterval * 60;
+		}
+		if(refreshTimeUnit == "Hours")
+		{
+			refreshInterval = refreshInterval * 60 * 60;
+		}
+	}
+	if(timeLapsedAfterLastUpdate != null)
+	{
+		if(timeLapsedAfterLastUpdate >= refreshInterval)
+		{
+			initiate();
+		}
+	}
+	else
+	{
+		setTimeout(initiate, refreshInterval);
+	}
 }
 
 function MovieObject(title, coverSrc, lead, supporting, direction, music, watchURL)
@@ -408,6 +399,7 @@ function PreferencesManager()
 		function(keyAndData){
 			preferencesManager.prefs = keyAndData;
 			preferencesManager.preferencesRetrieved = true;
+			setTimeoutOrExecuteInitiate(null);
 		});
 	}
 
