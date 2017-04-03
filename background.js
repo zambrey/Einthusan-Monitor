@@ -35,12 +35,12 @@ function Constants()
 
 	//PREFERENCE RELATED CONSTANTS
 	this.DEFAULT_LANGUAGE_KEY = "defaultLanguage";
-	this.DISPLAY_LANGUAGE_KEY = "displayLanguage";
 	this.SHOW_LANGUAGE_KEY = "showLanguage";
 	this.NOTIFICATIONS_LANGUAGE_KEY = "notifLanguage";
 	this.REFRESH_TIME_VALUE_KEY = "refreshTimeVal";
 	this.REFRESH_TIME_UNIT_KEY = "refreshTimeUnit";
 	this.VIEW_STYLE_KEY = "viewStyle";
+	
 	this.DEFAULT_REFRESH_TIME_VALUE = "3";
 	this.DEFAULT_REFRESH_TIME_UNIT = "Hours";
 	this.DEFAULT_VIEW_STYLE = this.LIST_VIEW_STYLE;
@@ -61,11 +61,11 @@ function Constants()
 function initiate()
 {
 	isDataReady = false;
+	preferencesManager.getAllPreferences();
 	requests = [];
 	sendXMLRequest(CONSTANTS.HOME_URL, CONSTANTS.LANGUAGES_REQUEST, null);
 	setTimeoutOrExecuteInitiate(null);
 	transitionPreferencesToChromeStorage();
-	preferencesManager.getAllPreferences();
 }
 
 function getMovieTitlesForLanguage(languageName)
@@ -97,6 +97,7 @@ function handleXMLRequestResponse(request, requestType, languageName, responseTe
 			langName = langs[i].firstChild.childNodes[2].innerText;
 			contentManager.addLanguage(langName);
 		}
+		preferencesManager.ensureValidValues(contentManager.getLanguagesData());
 		contentManager.resetMovies();
 		newMoviesCnt = new Array(); newMoviesCnt.length = contentManager.getLanguagesData().length;
 		langsChecked = new Array(); langsChecked.length = contentManager.getLanguagesData().length;
@@ -254,14 +255,14 @@ function capitaliseFirstLetter(string)
 }
 
 /*This function computes refresh interval value set by the user first.
-  If argument is non-null, it call initiate if timeElapsed > refreshInterval. Otherwise it sets up timout call for initiate.*/
+  If argument is non-null, it calls initiate if timeElapsed > refreshInterval. Otherwise it sets up timout call for initiate.*/
 function setTimeoutOrExecuteInitiate(timeLapsedAfterLastUpdate)
 {
 	localStorageManager.getLocalStorageValuesInBatch([CONSTANTS.REFRESH_TIME_VALUE_KEY,CONSTANTS.REFRESH_TIME_UNIT_KEY],
 		function(keysAndData)
 		{
-			var refreshTimeVal = parseInt(keysAndData[CONSTANTS.REFRESH_TIME_VALUE_KEY]),
-				refreshTimeUnit = keysAndData[CONSTANTS.REFRESH_TIME_UNIT_KEY],
+			var refreshTimeVal = parseInt(preferencesManager.prefs[CONSTANTS.REFRESH_TIME_VALUE_KEY]),
+				refreshTimeUnit = preferencesManager.prefs[CONSTANTS.REFRESH_TIME_UNIT_KEY],
 				refreshInterval = 0;
 			if(!refreshTimeVal || !refreshTimeUnit)
 			{
@@ -347,19 +348,17 @@ function sumUpArray(arrayToSum)
 
 function setBadge()
 {
-	localStorageManager.getLocalStorageValueForKey(CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY, function(notifLangs){
-		notifLangs = notifLangs["data"];
-		var badgeNumber = sumUpArraySelectively(newMoviesCnt, notifLangs);
-		if(badgeNumber > 0)
-		{
-			chrome.browserAction.setBadgeText({"text":badgeNumber.toString()});//248,148,6
-			chrome.browserAction.setBadgeBackgroundColor({"color":[248,148,6,200]});
-		}
-		else
-		{
-			chrome.browserAction.setBadgeText({"text":"".toString()});
-		}
-	});
+	var notifLangs = preferencesManager.prefs[CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY];
+	var badgeNumber = sumUpArraySelectively(newMoviesCnt, notifLangs);
+	if(badgeNumber > 0)
+	{
+		chrome.browserAction.setBadgeText({"text":badgeNumber.toString()});//248,148,6
+		chrome.browserAction.setBadgeBackgroundColor({"color":[248,148,6,200]});
+	}
+	else
+	{
+		chrome.browserAction.setBadgeText({"text":"".toString()});
+	}
 }
 
 function sendMessage(msgType)
@@ -397,50 +396,63 @@ chrome.extension.onRequest.addListener(
 function PreferencesManager()
 {
 	this.preferencesRetrieved = false;
-	this.defaultLang = "";
-	this.notifLang = [];
-	this.timeVal = 3;
-	this.timeUnit = "Hours";
+	this.prefs = {};
 	this.getAllPreferences = function()
 	{
 		localStorageManager.getLocalStorageValuesInBatch([CONSTANTS.DEFAULT_LANGUAGE_KEY,
-																					CONSTANTS.REFRESH_TIME_VALUE_KEY,
-																					CONSTANTS.REFRESH_TIME_UNIT_KEY,
-																					CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY,
-																					CONSTANTS.SHOW_LANGUAGE_KEY],
+														CONSTANTS.REFRESH_TIME_VALUE_KEY,
+														CONSTANTS.REFRESH_TIME_UNIT_KEY,
+														CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY,
+														CONSTANTS.SHOW_LANGUAGE_KEY,
+														CONSTANTS.VIEW_STYLE_KEY],
 		function(keyAndData){
-			preferencesManager.defaultLang = keyAndData[CONSTANTS.DEFAULT_LANGUAGE_KEY];
-			preferencesManager.notifLang = keyAndData[CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY];
-			preferencesManager.showLang = keyAndData[CONSTANTS.SHOW_LANGUAGE_KEY];
-			preferencesManager.timeVal = keyAndData[CONSTANTS.REFRESH_TIME_VALUE_KEY];
-			preferencesManager.timeUnit = keyAndData[CONSTANTS.REFRESH_TIME_UNIT_KEY];
+			preferencesManager.prefs = keyAndData;
 			preferencesManager.preferencesRetrieved = true;
+		});
+	}
+
+	this.setPreferenceValue = function(key, value)
+	{
+		localStorageManager.setLocalStorageValueForKey(key, value, function() {
+			preferencesManager.prefs[key] = value;
 		});
 	}
 
 	this.ensureValidValues = function(languages)
 	{
-		if(!this.defaultLang)
+		if(!this.prefs[CONSTANTS.DEFAULT_LANGUAGE_KEY])
 		{
-			localStorageManager.setLocalStorageValueForKey(CONSTANTS.DEFAULT_LANGUAGE_KEY, languages[0]);
+			this.setPreferenceValue(CONSTANTS.DEFAULT_LANGUAGE_KEY, languages[0]);
 		}
-		if(!this.showLang)
+		if(!this.prefs[CONSTANTS.SHOW_LANGUAGE_KEY])
 		{
 			var prefShow = {};
 	   		for(var i=0; i<languages.length; i++)
 	   		{
 	   			prefShow[languages[i]] = true;
 	   		}
-	   		localStorageManager.setLocalStorageValueForKey(CONSTANTS.SHOW_LANGUAGE_KEY, prefShow);	
+	   		this.setPreferenceValue(CONSTANTS.SHOW_LANGUAGE_KEY, prefShow);
 		}
-		if(!this.notifLang)
+		if(!this.prefs[CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY])
 		{
 			var prefNotif = {};
 	   		for(var i=0; i<languages.length; i++)
 	   		{
 	   			prefNotif[languages[i]] = true;
 	   		}
-	   		localStorageManager.setLocalStorageValueForKey(CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY, prefNotif);
+	   		this.setPreferenceValue(CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY, prefNotif);
+		}
+		if(!this.prefs[CONSTANTS.REFRESH_TIME_UNIT_KEY])
+		{
+			this.setPreferenceValue(CONSTANTS.REFRESH_TIME_UNIT_KEY, CONSTANTS.DEFAULT_REFRESH_TIME_UNIT);
+		}
+		if(!this.prefs[CONSTANTS.REFRESH_TIME_VALUE_KEY])
+		{
+			this.setPreferenceValue(CONSTANTS.REFRESH_TIME_VALUE_KEY, CONSTANTS.DEFAULT_REFRESH_TIME_VALUE);
+		}
+		if(!this.prefs[CONSTANTS.VIEW_STYLE_KEY])
+		{
+			this.setPreferenceValue(CONSTANTS.VIEW_STYLE_KEY, CONSTANTS.DEFAULT_VIEW_STYLE);
 		}
 	}
 }
@@ -521,11 +533,11 @@ function LocalStorageManager()
 		})
 	}
 
-	this.setLocalStorageValueForKey = function(key, data)
+	this.setLocalStorageValueForKey = function(key, data, callbackFunc)
 	{
 		var details = {};
 		details[key] = data;
-		chrome.storage.sync.set(details, null);	
+		chrome.storage.sync.set(details, callbackFunc);	
 	}
 
 	this.buildMovieNamesArray = function(dataObjects)

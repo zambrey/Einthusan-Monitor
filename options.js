@@ -4,11 +4,6 @@
  * ameyazambre@gmail.com
  */
 var backgroundPage = chrome.extension.getBackgroundPage(),
-	defaultLang,
-	showLang,
-	notifLang,
-	timeVal,
-	timeUnit,
 	numAttempts = 0;
 
 confirmIfDataReady();
@@ -20,16 +15,12 @@ function confirmIfDataReady()
 
 function renderOnDataReady()
 {
-	defaultLang = backgroundPage.preferencesManager.defaultLang;
-	notifLang = backgroundPage.preferencesManager.notifLang;
-	showLang = backgroundPage.preferencesManager.showLang;
-	timeVal = backgroundPage.preferencesManager.timeVal;
-	timeUnit = backgroundPage.preferencesManager.timeUnit;
-	var listHtml = "", 
+	var notifLang = backgroundPage.preferencesManager.prefs[backgroundPage.CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY],
+		showLang = backgroundPage.preferencesManager.prefs[backgroundPage.CONSTANTS.SHOW_LANGUAGE_KEY],
+		listHtml = "", 
 		notifListHtml = "",
 		showListHtml = "";
 	languages = backgroundPage.contentManager.getLanguagesData();
-	backgroundPage.preferencesManager.ensureValidValues(languages);
 	for(i=0; i<languages.length; i++)
 	{
 		listHtml = listHtml + "<li><a href=#>"+languages[i]+"</a></li>";
@@ -48,9 +39,9 @@ function renderOnDataReady()
 	$("#notifChecklist").html(notifListHtml);
 	setLastUpdatedText();
 	setInteraction();
-	$("#selectedLanguage").html(defaultLang+" <span class=\"caret\"></span>");
-	$("#timeValue").val(timeVal);
-	$("#selectedTimeUnit").html(timeUnit+" <span class=\"caret\"></span>");	
+	$("#selectedLanguage").html(backgroundPage.preferencesManager.prefs[backgroundPage.CONSTANTS.DEFAULT_LANGUAGE_KEY]+" <span class=\"caret\"></span>");
+	$("#timeValue").val(backgroundPage.preferencesManager.prefs[backgroundPage.CONSTANTS.REFRESH_TIME_VALUE_KEY]);
+	$("#selectedTimeUnit").html(backgroundPage.preferencesManager.prefs[backgroundPage.CONSTANTS.REFRESH_TIME_UNIT_KEY]+" <span class=\"caret\"></span>");	
 }
 
 function setTimeoutOnDataNotReady()
@@ -68,17 +59,17 @@ function setInteraction()
 		$(this).parent().parent().prev().html($(this).text()+" <span class=\"caret\"></span>");
       	if($(this).parent().parent().attr('id') == "languageList")
       	{
-      		backgroundPage.localStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.DEFAULT_LANGUAGE_KEY, $(this).text());
+      		backgroundPage.preferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.DEFAULT_LANGUAGE_KEY, $(this).text());
       	}
       	else
       	{
-      		backgroundPage.localStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.REFRESH_TIME_UNIT_KEY, $(this).text());
+      		backgroundPage.preferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.REFRESH_TIME_UNIT_KEY, $(this).text());
       		sendMessage(backgroundPage.CONSTANTS.INITIATE_AGAIN);
       	}
    });
 
    $("#timeValue").change(function(){
-   		backgroundPage.localStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.REFRESH_TIME_VALUE_KEY, $(this).val());
+   		backgroundPage.preferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.REFRESH_TIME_VALUE_KEY, $(this).val());
    		sendMessage(backgroundPage.CONSTANTS.INITIATE_AGAIN);
    });
 
@@ -94,7 +85,7 @@ function setInteraction()
    		{
    			prefNotif[notifList[i].innerText] = $(notifList[i]).hasClass("label-danger")?false:true;
    		}
-   		backgroundPage.localStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY, prefNotif);
+   		backgroundPage.preferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY, prefNotif);
    		sendMessage(backgroundPage.CONSTANTS.INITIATE_AGAIN);
    });
 
@@ -113,7 +104,7 @@ function setInteraction()
    				prefShow[showList[i].innerText] = true;
    			}
    		}
-   		backgroundPage.localStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.SHOW_LANGUAGE_KEY, prefShow);
+   		backgroundPage.preferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.SHOW_LANGUAGE_KEY, prefShow);
    });
 }
 

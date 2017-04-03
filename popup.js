@@ -42,32 +42,13 @@ function sendMessage(msgType, languageName)
 
 function PopupRenderManager()
 {
-	backgroundPage.localStorageManager.getLocalStorageValueForKey(backgroundPage.CONSTANTS.VIEW_STYLE_KEY, 
-		function(keyAndData)
-		{
-			renderManager.viewStyle = keyAndData['data'];
-		});
-	backgroundPage.localStorageManager.getLocalStorageValueForKey(backgroundPage.CONSTANTS.DEFAULT_LANGUAGE_KEY, 
-		function(keyAndData)
-		{
-			renderManager.startLanguage = keyAndData['data'];
-		});
-	backgroundPage.localStorageManager.getLocalStorageValueForKey(backgroundPage.CONSTANTS.SHOW_LANGUAGE_KEY,
-		function(keyAndData)
-		{
-			renderManager.showLangs = keyAndData['data'];
-		});
 	this.listViewHolder = document.getElementById('movieTitlesList').childNodes[0];
 	this.tileViewHolder = document.getElementById('movieTitlesTiles');
 	this.usedHolder = null;
 	this.unusedHolder = null;
 	this.selectedLanguage = null;
 	this.dataSource = null;
-	if(!this.viewStyle)
-	{
-		this.viewStyle = backgroundPage.CONSTANTS.DEFAULT_VIEW_STYLE;
-		backgroundPage.localStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.VIEW_STYLE_KEY, backgroundPage.CONSTANTS.DEFAULT_VIEW_STYLE);
-	}
+
 	this.renderOnDataReady = function()
 	{
 		var startLang, languages, selControl;
@@ -78,19 +59,14 @@ function PopupRenderManager()
 		}
 		languages = backgroundPage.contentManager.getLanguagesData();
 		renderManager.renderLanguageControls(languages);
-		startLang = renderManager.startLanguage;
-		if(!startLang)
-		{
-			startLang = languages[0];
-			backgroundPage.localStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.DEFAULT_LANGUAGE_KEY, startLang);
-		}
+		startLang = backgroundPage.preferencesManager.prefs[backgroundPage.CONSTANTS.DEFAULT_LANGUAGE_KEY];
 		selControl = startLang.toLowerCase()+"Button";
 		$("#"+selControl).trigger("click");
 		renderManager.renderToolsBar();
 		renderManager.renderSearchBar();
 		$(".glyphicon-cog").css('display','block');
 		$(".glyphicon-search").css('display','block');
-		if(this.viewStyle==backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
+		if(backgroundPage.preferencesManager.prefs[backgroundPage.CONSTANTS.VIEW_STYLE_KEY] == backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
 		{
 			$("#listView").attr("active","true");
 			$("#tileView").attr("active","false");
@@ -120,6 +96,8 @@ function PopupRenderManager()
 			languages = backgroundPage.contentManager.getLanguagesData();
 		}
 		var languagesTable = document.getElementById('languageButtons'),
+			showLangs = backgroundPage.preferencesManager.prefs[backgroundPage.CONSTANTS.SHOW_LANGUAGE_KEY],
+			notifLangs = backgroundPage.preferencesManager.prefs[backgroundPage.CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY],
 			tr,
 			buttons = [],
 			lang,
@@ -133,7 +111,7 @@ function PopupRenderManager()
 			$(caroDiv).addClass("item").addClass("active");
 			for(i=0; i<languages.length; i++)
 			{
-				if(!this.showLangs || this.showLangs[languages[i]])
+				if(!showLangs || showLangs[languages[i]])
 				{
 					var button = document.createElement('button');
 					button.setAttribute('class','btn');
@@ -152,28 +130,26 @@ function PopupRenderManager()
 					}
 				}
 			}
-			backgroundPage.localStorageManager.getLocalStorageValueForKey(backgroundPage.CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY, function(keyAndData){
-				var notifLangs = keyAndData["data"];
-				for(var j=0; j<languages.length;j++)
+			for(var j=0; j<languages.length;j++)
+			{
+				if(backgroundPage.newMoviesCnt[j]>0 && 
+					(!showLangs || showLangs[languages[j]]) && 
+					(!notifLangs || notifLangs[languages[j]]))
 				{
-					if(backgroundPage.newMoviesCnt[j]>0 && 
-						(!renderManager.showLangs || renderManager.showLangs[languages[j]]) && 
-						(!notifLangs || notifLangs[languages[j]]))
-					{
-						renderManager.addLanguageControlBadge(buttons[j],backgroundPage.newMoviesCnt[j]);
-					}	
-				}
-			});
+					renderManager.addLanguageControlBadge(buttons[j],backgroundPage.newMoviesCnt[j]);
+				}	
+			}
 		}
 		languagesTable.style.opacity = 1.0;
 	}
 	this.renderSelectedLanguageControl = function(language)
 	{
 		renderManager.selectedLanguage = language;
-		var languages = backgroundPage.contentManager.getLanguagesData();
+		var languages = backgroundPage.contentManager.getLanguagesData(),
+			showLangs = backgroundPage.preferencesManager.prefs[backgroundPage.CONSTANTS.SHOW_LANGUAGE_KEY];
 		for(i=0; i<languages.length; i++)
 		{
-			if(!this.showLangs || this.showLangs[languages[i]])
+			if(!showLangs || showLangs[languages[i]])
 			{
 				var langButton = document.getElementById(languages[i].toLowerCase()+"Button");
 				if(languages[i] == language)
@@ -205,7 +181,7 @@ function PopupRenderManager()
 	}
 	this.renderMovieItems = function(movieItemsSource)
 	{
-		if(renderManager.viewStyle == backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
+		if(backgroundPage.preferencesManager.prefs[backgroundPage.CONSTANTS.VIEW_STYLE_KEY] == backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
 		{
 			renderManager.listViewHolder.parentNode.style.opacity = 0.0;
 		}
@@ -223,7 +199,7 @@ function PopupRenderManager()
 	{
 		var titleTable,
 			movieObjects = renderManager.dataSource;
-		if(renderManager.viewStyle == backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
+		if(backgroundPage.preferencesManager.prefs[backgroundPage.CONSTANTS.VIEW_STYLE_KEY] == backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
 		{
 			titleTable = renderManager.listViewHolder.parentNode;
 			renderManager.usedHolder = renderManager.listViewHolder;
@@ -273,7 +249,7 @@ function PopupRenderManager()
 	this.createMovieItem = function(movieObject)
 	{
 		var item;
-		if(renderManager.viewStyle == backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
+		if(backgroundPage.preferencesManager.prefs[backgroundPage.CONSTANTS.VIEW_STYLE_KEY] == backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
 		{
 			item = this.createMovieListItem(movieObject);
 		}
@@ -507,10 +483,9 @@ function PopupInteractionManager()
 		});
 		$("#tileView").click(function()
 		{
-			if(renderManager.viewStyle != backgroundPage.CONSTANTS.TILE_VIEW_STYLE)
+			if(backgroundPage.preferencesManager.prefs[backgroundPage.CONSTANTS.VIEW_STYLE_KEY] != backgroundPage.CONSTANTS.TILE_VIEW_STYLE)
 			{
-				renderManager.viewStyle = backgroundPage.CONSTANTS.TILE_VIEW_STYLE;
-				backgroundPage.localStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.VIEW_STYLE_KEY, backgroundPage.CONSTANTS.TILE_VIEW_STYLE);
+				backgroundPage.preferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.VIEW_STYLE_KEY, backgroundPage.CONSTANTS.TILE_VIEW_STYLE);
 				renderManager.switchViewStyle();
 				$("#listView").attr("active","false");
 				$("#tileView").attr("active","true");
@@ -519,10 +494,9 @@ function PopupInteractionManager()
 		})
 		$("#listView").click(function()
 		{
-			if(renderManager.viewStyle != backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
+			if(backgroundPage.preferencesManager.prefs[backgroundPage.CONSTANTS.VIEW_STYLE_KEY] != backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
 			{
-				renderManager.viewStyle = backgroundPage.CONSTANTS.LIST_VIEW_STYLE;
-				backgroundPage.localStorageManager.setLocalStorageValueForKey(backgroundPage.CONSTANTS.VIEW_STYLE_KEY, backgroundPage.CONSTANTS.LIST_VIEW_STYLE);
+				backgroundPage.preferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.VIEW_STYLE_KEY, backgroundPage.CONSTANTS.LIST_VIEW_STYLE);
 				renderManager.switchViewStyle();
 				$("#listView").attr("active","true");
 				$("#tileView").attr("active","false");
