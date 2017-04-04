@@ -84,12 +84,22 @@ function setInteraction()
    });
 	
 	$("#notifChecklist span").click(function(event){
+		if($($(event.target)[0]).hasClass("label-danger"))
+		{
+			var lang = $(event.target)[0].innerText,
+				showLang = backgroundPage.preferencesManager.prefs[backgroundPage.CONSTANTS.SHOW_LANGUAGE_KEY];
+			if(!showLang[lang])
+			{
+				alert("Notifcations can be shown only if the language is shown.");
+				return;
+			}
+		}
 		$(event.target).toggleClass("label-danger label-success");
    		var notifList = $("#notifChecklist span"),
    			prefNotif = {};
    		for(var i=0; i<notifList.length; i++)
    		{
-   			prefNotif[notifList[i].innerText] = $(notifList[i]).hasClass("label-danger")?false:true;
+   			prefNotif[notifList[i].innerText] = $(notifList[i]).hasClass("label-danger") ? false : true;
    		}
    		backgroundPage.preferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY, prefNotif);
    		sendMessage(backgroundPage.CONSTANTS.INITIATE_AGAIN);
@@ -97,20 +107,22 @@ function setInteraction()
 
 	$("#showChecklist span").click(function(event){
 		$(event.target).toggleClass("label-danger label-success");
+		if($($(event.target)[0]).hasClass("label-danger"))
+		{
+			$("#notifChecklist span:contains("+$(event.target)[0].innerText+")").removeClass("label-success").addClass("label-danger");
+		}
    		var showList = $("#showChecklist span"),
-   			prefShow = {};
+   			notifList = $("#notifChecklist span"),
+   			prefShow = {},
+   			prefNotif = {};
    		for(var i=0; i<showList.length; i++)
    		{
-   			if($(showList[i]).hasClass("label-danger")) 
-   			{
-   				prefShow[showList[i].innerText] = false;
-   			}
-   			else
-   			{
-   				prefShow[showList[i].innerText] = true;
-   			}
+   			prefShow[showList[i].innerText] = $(showList[i]).hasClass("label-danger") ? false : true;
+   			prefNotif[notifList[i].innerText] = $(notifList[i]).hasClass("label-danger") ? false : true;
    		}
    		backgroundPage.preferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.SHOW_LANGUAGE_KEY, prefShow);
+   		backgroundPage.preferencesManager.setPreferenceValue(backgroundPage.CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY, prefNotif);
+   		sendMessage(backgroundPage.CONSTANTS.INITIATE_AGAIN);
    });
 }
 
