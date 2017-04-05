@@ -136,7 +136,7 @@ function PopupRenderManager()
 					(!showLangs || showLangs[languages[j]]) && 
 					(!notifLangs || notifLangs[languages[j]]))
 				{
-					renderManager.addLanguageControlBadge(buttons[j],backgroundPage.newMoviesCnt[j]);
+					renderManager.addLanguageControlBadge($("#"+languages[j].toLowerCase()+"Button")[0], backgroundPage.newMoviesCnt[j]);
 				}	
 			}
 		}
