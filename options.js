@@ -106,10 +106,16 @@ function setInteraction()
    });
 
 	$("#showChecklist span").click(function(event){
+		var lang = $(event.target)[0].innerText;
+		if($($(event.target)[0]).hasClass("label-success") && lang == backgroundPage.preferencesManager.prefs[backgroundPage.CONSTANTS.DEFAULT_LANGUAGE_KEY])
+		{
+			alert("Default popup language cannot be hidden.");
+			return;
+		}
 		$(event.target).toggleClass("label-danger label-success");
 		if($($(event.target)[0]).hasClass("label-danger"))
 		{
-			$("#notifChecklist span:contains("+$(event.target)[0].innerText+")").removeClass("label-success").addClass("label-danger");
+			$("#notifChecklist span:contains("+lang+")").removeClass("label-success").addClass("label-danger");
 		}
    		var showList = $("#showChecklist span"),
    			notifList = $("#notifChecklist span"),
