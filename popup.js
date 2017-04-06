@@ -10,7 +10,7 @@ var backgroundPage = chrome.extension.getBackgroundPage(),
 	searchManager = new SearchManager();
 
 {
-	setTimeout(renderManager.initRender, 5000);
+	setTimeout(renderManager.initRender, 10);
 }
 
 function sendMessage(msgType, languageName)
@@ -77,6 +77,7 @@ function PopupRenderManager()
 			$("#tileView").attr("active","true");
 		}
 	}
+
 	this.setTimeoutOnDataNotReady = function()
 	{
 		renderManager.showProgressIndicator();
@@ -85,30 +86,27 @@ function PopupRenderManager()
 		else
 			renderManager.showProgressFailure();
 	}
+
 	this.initRender = function()
 	{
 		sendMessage(backgroundPage.CONSTANTS.IS_DATA_READY_QUERY);
 	}
+
 	this.renderLanguageControls = function(languages)
 	{
 		if(!languages)
 		{
 			languages = backgroundPage.contentManager.getLanguagesData();
 		}
-		var languagesTable = document.getElementById('languageButtons'),
+		var activeLanguageControls = 0;
+			languagesTable = document.getElementById('languageButtons'),
 			showLangs = backgroundPage.preferencesManager.prefs[backgroundPage.CONSTANTS.SHOW_LANGUAGE_KEY],
-			notifLangs = backgroundPage.preferencesManager.prefs[backgroundPage.CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY],
-			tr,
-			buttons = [],
-			lang,
-			td,
-			div,
-			badge;
+			notifLangs = backgroundPage.preferencesManager.prefs[backgroundPage.CONSTANTS.NOTIFICATIONS_LANGUAGE_KEY];
 		if(languages.length>0 && languagesTable)
 		{
-			tr =document.createElement('tr');
 			var caroDiv=document.createElement("div");
 			$(caroDiv).addClass("item").addClass("active");
+			var buttonsToAdd = 0;
 			for(i=0; i<languages.length; i++)
 			{
 				if(!showLangs || showLangs[languages[i]])
@@ -117,18 +115,27 @@ function PopupRenderManager()
 					button.setAttribute('class','btn');
 					button.setAttribute('id',languages[i].toLowerCase()+"Button");
 					button.innerHTML = languages[i];
-					lang = languages[i];
 					button.addEventListener('click',function(){interactionManager.languageControlClickHandler(this);});
 					button.setAttribute('style','margin:4px;');
-					buttons.push(button);
 					caroDiv.appendChild(button);
-					if(caroDiv.children.length>=3 || i==languages.length-1)
+					buttonsToAdd++;
+					activeLanguageControls++;
+					if(buttonsToAdd == 3)
 					{
 						$(caroDiv).appendTo($(".carousel-inner"));
 						caroDiv=document.createElement("div");
 						$(caroDiv).addClass("item");
+						buttonsToAdd = 0;
 					}
 				}
+			}
+			if(buttonsToAdd != 0)
+			{
+				$(caroDiv).appendTo($(".carousel-inner"));
+			}
+			if(activeLanguageControls <= 3)
+			{
+				$(".carousel-control").css('display','none');
 			}
 			for(var j=0; j<languages.length;j++)
 			{
@@ -142,6 +149,7 @@ function PopupRenderManager()
 		}
 		languagesTable.style.opacity = 1.0;
 	}
+
 	this.renderSelectedLanguageControl = function(language)
 	{
 		renderManager.selectedLanguage = language;
@@ -163,6 +171,7 @@ function PopupRenderManager()
 			}
 		}
 	}
+
 	this.deselectLanguageControl = function()
 	{
 		var langButton = document.getElementById(this.selectedLanguage.toLowerCase()+"Button");
@@ -171,6 +180,7 @@ function PopupRenderManager()
 			langButton.setAttribute('class','btn btn-primary');
 		}
 	}
+
 	this.addLanguageControlBadge = function(control, newMoviesNumber)
 	{
 		badge = document.createElement('span');
@@ -179,6 +189,7 @@ function PopupRenderManager()
 		badge.innerText = newMoviesNumber;
 		control.appendChild(badge);
 	}
+
 	this.renderMovieItems = function(movieItemsSource)
 	{
 		if(backgroundPage.preferencesManager.prefs[backgroundPage.CONSTANTS.VIEW_STYLE_KEY] == backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
@@ -191,10 +202,12 @@ function PopupRenderManager()
 		}
 		setTimeout(function(){renderManager.renderDataSource(movieItemsSource);},250);
 	}
+
 	this.switchViewStyle = function()
 	{
 		this.renderMovieItems();
 	}
+
 	this.renderDataSource = function(movieItemsSource)
 	{
 		var titleTable,
@@ -231,10 +244,12 @@ function PopupRenderManager()
 			}
 		}
 	}
+
 	this.addMovieItemToRenderedList = function(movieObject)
 	{
 		renderManager.usedHolder.appendChild(this.createMovieItem(movieObject));
 	}
+
 	this.addMovieItemToRenderedListAtIndex = function(movieObject, index)
 	{
 		if(index == 0)
@@ -246,6 +261,7 @@ function PopupRenderManager()
 			$('#movieTitlesList > tbody > tr').eq(index-1).after(this.createMovieItem(movieObject));	
 		}
 	}
+
 	this.createMovieItem = function(movieObject)
 	{
 		var item;
@@ -259,6 +275,7 @@ function PopupRenderManager()
 		}
 		return item;
 	}
+
 	this.createMovieTile = function(movieObject)
 	{
 		var div = document.createElement('div');
@@ -280,6 +297,7 @@ function PopupRenderManager()
 		div.addEventListener('click',clickHandler);
 		return div;
 	}
+
 	this.createMovieListItem = function(movieObject)
 	{
 		var tr = document.createElement('tr');
@@ -309,6 +327,7 @@ function PopupRenderManager()
 		tr.addEventListener('click',clickHandler);
 		return tr;
 	}
+
 	this.formatMovieDescription = function(movieObject)
 	{
 		var details = ["", "", ""]; //cast, director, music
@@ -342,6 +361,7 @@ function PopupRenderManager()
 		formattedDescription = "<i>Cast:</i> "+details[0] + "<br><i>Director:</i> "+ details[1] + "<br><i>Music:</i> " + details[2];
 		return formattedDescription;
 	}
+
 	this.removeLanguageControlBadge = function(language)
 	{
 		var button = document.getElementById(language.toLowerCase()+"Button");
@@ -351,14 +371,17 @@ function PopupRenderManager()
 			button.lastElementChild.style.opacity = 0;
 		}
 	}
+
 	this.renderSearchBar = function()
 	{
 		interactionManager.setTopBarInteraction();
 	}
+
 	this.renderToolsBar = function()
 	{
 		interactionManager.setBottomBarInteraction();
 	}
+
 	this.hideProgressIndicator = function()
 	{
 		var pi = document.getElementById('progressIndicatorDiv');
@@ -367,6 +390,7 @@ function PopupRenderManager()
 			pi.style.display = 'none';
 		}
 	}
+
 	this.showProgressIndicator = function()
 	{
 		var pi = document.getElementById('progressIndicatorDiv');
@@ -375,16 +399,19 @@ function PopupRenderManager()
 			pi.style.display = 'block';
 		}
 	}
+
 	this.showProgressFailure = function()
 	{
 		$("#progressIndicatorDiv").css('display','none');
 		$("#progressFail").css('display','block');
 	}
+
 	this.showAlertBox = function(message)
 	{
 		$("#alertTextHolder").text(message);
 		$("#alertBox").css({'opacity':'1','pointer-events':'all'});
 	}
+
 	this.dismissAlertBox = function()
 	{
 		$("#alertBox").css({'opacity':'0','pointer-events':'none'});
@@ -401,6 +428,7 @@ function PopupInteractionManager()
 		renderManager.dataSource = backgroundPage.contentManager.getMoviesData(language);
 		renderManager.renderMovieItems("latest");
 	}
+
 	this.getMovieRowClickHandler = function(url)
 	{
 		return function()
@@ -408,6 +436,7 @@ function PopupInteractionManager()
 			chrome.tabs.create({"url":url},function(){});
 		}
 	}
+
 	this.setTopBarInteraction = function()
 	{
 		$(".glyphicon-search").click(function(){
@@ -433,6 +462,7 @@ function PopupInteractionManager()
         	renderManager.dismissAlertBox();
         });
 	}
+
 	this.setBottomBarInteraction = function()
 	{
 		$(".glyphicon-cog").click(function()
@@ -515,6 +545,7 @@ function SearchManager()
 		this.abortSearch();
 		renderManager.dataSource = [];
 	}
+
 	this.abortSearch = function()
 	{
 		if(this.requests.length > 0)
@@ -526,6 +557,7 @@ function SearchManager()
 		}
 		this.requests = [];
 	}
+
 	this.sendSearchRequest = function(page)
 	{
 		$("#searchPage").val(page);
@@ -538,6 +570,7 @@ function SearchManager()
           });
           this.requests.push(request);
 	}
+
 	this.processSearchResponse = function(data, xhr)
 	{
 		data = jQuery.parseJSON(data);
@@ -569,6 +602,7 @@ function SearchManager()
 			}
 		}
 	}
+
 	this.processMovieData = function(data, xhr)
 	{
 		//check if request is in the array anywhere
@@ -582,6 +616,7 @@ function SearchManager()
 			renderManager.addMovieItemToRenderedListAtIndex(mo, index);
 		}
 	}
+
 	this.printDataSource = function(ds)
 	{
 		for(var i=0;i<ds.length; i++)
@@ -589,6 +624,7 @@ function SearchManager()
 			console.log(i+": "+ds[i].movieTitle);
 		}
 	}
+
 	this.findPositionToInsertMO = function(title)
 	{
 		var moviesArray = renderManager.dataSource,
@@ -616,6 +652,7 @@ function SearchManager()
 		}
 		return compareVal<0?mid:mid+1;
 	}
+
 	this.collateMovieDetails = function(data)
 	{
 		var cast = new Array();
@@ -638,6 +675,7 @@ function SearchManager()
 		detailsStr = detailsStr +". Directed by "+data.director+". Music by "+data.composer+".";
 		return detailsStr;
 	}
+
 	this.MovieObject = function(id, title, language, coverSrc, details)
 	{
 		this.movieTitle = title;
