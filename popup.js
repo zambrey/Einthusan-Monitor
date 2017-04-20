@@ -7,7 +7,6 @@ var backgroundPage = chrome.extension.getBackgroundPage(),
 	numAttempts = 0;
 	renderManager = new PopupRenderManager();
 	interactionManager = new PopupInteractionManager();
-	searchManager = new SearchManager();
 
 {
 	setTimeout(renderManager.initRender, 10);
@@ -63,9 +62,7 @@ function PopupRenderManager()
 		selControl = startLang.toLowerCase()+"Button";
 		$("#"+selControl).trigger("click");
 		renderManager.renderToolsBar();
-		renderManager.renderSearchBar();
 		$(".glyphicon-cog").css('display','block');
-		$(".glyphicon-search").css('display','block');
 		if(backgroundPage.preferencesManager.prefs[backgroundPage.CONSTANTS.VIEW_STYLE_KEY] == backgroundPage.CONSTANTS.LIST_VIEW_STYLE)
 		{
 			$("#listView").attr("active","true");
@@ -372,11 +369,6 @@ function PopupRenderManager()
 		}
 	}
 
-	this.renderSearchBar = function()
-	{
-		interactionManager.setTopBarInteraction();
-	}
-
 	this.renderToolsBar = function()
 	{
 		interactionManager.setBottomBarInteraction();
@@ -423,7 +415,6 @@ function PopupInteractionManager()
 	this.languageControlClickHandler = function(control)
 	{
 		var language = control.childNodes[0].nodeValue;
-		searchManager.abortSearch();
 		renderManager.renderSelectedLanguageControl(language);
 		renderManager.dataSource = backgroundPage.contentManager.getMoviesData(language);
 		renderManager.renderMovieItems("latest");
@@ -435,32 +426,6 @@ function PopupInteractionManager()
 		{
 			chrome.tabs.create({"url":url},function(){});
 		}
-	}
-
-	this.setTopBarInteraction = function()
-	{
-		$(".glyphicon-search").click(function(){
-			$('#searchDiv').css('top','0');
-			$('#searchDiv').css('opacity','1');
-			$("#searchTerm").attr("placeholder","Search "+renderManager.selectedLanguage+" Movies");
-			$("#searchLang").val(renderManager.selectedLanguage.toLowerCase());
-			$(".glyphicon-search").css('opacity','0');
-			$("#searchTerm").trigger("focus");
-		});
-		$("#removeTopBar").click(function(){
-			$('#searchDiv').css('top','-36px');
-			$('#searchDiv').css('opacity','0');
-			$('.glyphicon-search').css('opacity','1');
-		});
-		$("#searchForm").submit( function (event) {
-		  searchManager.initiateSearch();
-          event.preventDefault();
-          searchManager.sendSearchRequest("1");
-        });
-        $("#dismissAlertBox").click(function()
-        {
-        	renderManager.dismissAlertBox();
-        });
 	}
 
 	this.setBottomBarInteraction = function()
@@ -532,157 +497,6 @@ function PopupInteractionManager()
 				$("#tileView").attr("active","false");
 			}
 		})
-	}
-}
-
-function SearchManager()
-{
-	this.requests = new Array();
-	this.searchUrl = "http://www.einthusan.com/webservice/filters.php";
-	this.movieDataUrl = "http://www.einthusan.com/webservice/movie.php?id=";
-	this.initiateSearch = function()
-	{
-		this.abortSearch();
-		renderManager.dataSource = [];
-	}
-
-	this.abortSearch = function()
-	{
-		if(this.requests.length > 0)
-		{
-			for(i=0; i<this.requests.length; i++)
-			{
-				this.requests[i].abort();
-			}
-		}
-		this.requests = [];
-	}
-
-	this.sendSearchRequest = function(page)
-	{
-		$("#searchPage").val(page);
-		var request = $.post(this.searchUrl, $("#searchForm").serialize(), function(data,textStatus, xhr){
-			searchManager.processSearchResponse(data, xhr);
-		}
-          ).fail(function(jqXHR, textStatus, errorThrown){
-     		if(errorThrown != "abort")
-          		renderManager.showAlertBox("Something went wrong.")
-          });
-          this.requests.push(request);
-	}
-
-	this.processSearchResponse = function(data, xhr)
-	{
-		data = jQuery.parseJSON(data);
-		if(data && data.found > 0)
-		{
-			if(data.page == 1)
-			{
-				renderManager.renderMovieItems("search");
-				renderManager.deselectLanguageControl();
-			}
-			for(i=0; i<data.results.length; i++)
-			{
-				$.get(searchManager.movieDataUrl+data.results[i], (function(req){
-				  	return function(data){
-								searchManager.processMovieData(data, req);
-							}
-				})(xhr));
-			}
-			if(data.max_page > 1 && data.page<data.max_page)
-			{
-				searchManager.sendSearchRequest(data.page+1);
-			}
-		}
-		else
-		{
-			if(!data || data.error || data.error == "No Results Found")
-			{
-				renderManager.showAlertBox("No movies found.");
-			}
-		}
-	}
-
-	this.processMovieData = function(data, xhr)
-	{
-		//check if request is in the array anywhere
-		if(searchManager.requests.indexOf(xhr) != -1 )
-		{
-			data = $.parseJSON(data);
-			var mo = new searchManager.MovieObject(data.movie_id, data.movie, data.language, data.cover, this.collateMovieDetails(data));
-			
-			var index = this.findPositionToInsertMO(mo.movieTitle);
-			renderManager.dataSource.insert(index, mo);
-			renderManager.addMovieItemToRenderedListAtIndex(mo, index);
-		}
-	}
-
-	this.printDataSource = function(ds)
-	{
-		for(var i=0;i<ds.length; i++)
-		{
-			console.log(i+": "+ds[i].movieTitle);
-		}
-	}
-
-	this.findPositionToInsertMO = function(title)
-	{
-		var moviesArray = renderManager.dataSource,
-			low = 0,
-			high = moviesArray.length-1,
-			mid, currMidTitle, compareVal;
-		
-		if(moviesArray.length == 0)
-		{
-			return low;
-		}
-		while(high>=low)
-		{
-			mid = Math.floor((low+high)/2);
-			currMidTitle = moviesArray[mid].movieTitle;
-			compareVal = title.localeCompare(currMidTitle);
-			if(compareVal<0)
-			{
-				high = mid-1;
-			}
-			else if(compareVal>0)
-			{
-				low = mid+1;
-			}
-		}
-		return compareVal<0?mid:mid+1;
-	}
-
-	this.collateMovieDetails = function(data)
-	{
-		var cast = new Array();
-		for(i=1; i<=7; i++)
-		{
-			if(data["cast"+i])
-				cast.push(data["cast"+i]);
-			else
-				break;
-		}
-		var detailsStr="Starring ";
-		for(i=0; i<cast.length; i++)
-		{
-			detailsStr = detailsStr + cast[i];
-			if(i==cast.length-2)
-				detailsStr = detailsStr + " and ";
-			else if(i<cast.length-1)
-				detailsStr = detailsStr + ", ";
-		}
-		detailsStr = detailsStr +". Directed by "+data.director+". Music by "+data.composer+".";
-		return detailsStr;
-	}
-
-	this.MovieObject = function(id, title, language, coverSrc, details)
-	{
-		this.movieTitle = title;
-		this.movieCover = "images/covers/"+coverSrc;
-		this.movieDetails = details;
-		this.watchURL = "/movies/watch.php?"+language.toLowerCase()+"moviesonline="+title+"&lang="+language.toLowerCase()+"&id="+id;
-		this.isNew = false;
 	}
 }
 
